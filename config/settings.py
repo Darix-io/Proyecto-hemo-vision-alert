@@ -38,9 +38,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'pacientes',
+    'historial' ,
     'seguridad',
     'riesgo' ,
-    'monitoreo'
+    'monitoreo',
 ]
 
 MIDDLEWARE = [
