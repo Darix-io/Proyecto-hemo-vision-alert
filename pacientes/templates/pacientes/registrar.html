@@ -1,0 +1,14 @@
+{% extends "pacientes/base.html" %}
+
+{% block titulo %}Registrar paciente | HemoVision Alert{% endblock %}
+
+{% block contenido %}
+  <h1>Registrar paciente</h1>
+
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Registrar paciente</button>
+    <a href="{% url 'pacientes:lista' %}">Cancelar</a>
+  </form>
+{% endblock %}
