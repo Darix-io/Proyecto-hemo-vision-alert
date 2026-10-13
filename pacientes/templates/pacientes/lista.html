@@ -1,0 +1,23 @@
+{% extends "pacientes/base.html" %}
+
+{% block titulo %}Pacientes | HemoVision Alert{% endblock %}
+
+{% block contenido %}
+  <h1>Pacientes</h1>
+  <p><a href="{% url 'pacientes:registrar' %}">Registrar paciente</a></p>
+
+  {% if pacientes %}
+    <table>
+      <thead>
+        <tr><th>Código</th></tr>
+      </thead>
+      <tbody>
+        {% for paciente in pacientes %}
+          <tr><td>{{ paciente.codigo }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>Todavía no hay pacientes registrados.</p>
+  {% endif %}
+{% endblock %}
