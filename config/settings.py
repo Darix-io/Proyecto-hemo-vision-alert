@@ -130,3 +130,7 @@ MAILERS = {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
     },
 }
+# Autenticación (M6, RF-10)
+LOGIN_URL = 'seguridad:login'
+LOGIN_REDIRECT_URL = 'pacientes:lista'
+LOGOUT_REDIRECT_URL = 'seguridad:login'
