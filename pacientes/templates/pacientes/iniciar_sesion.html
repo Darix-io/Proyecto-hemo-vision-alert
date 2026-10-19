@@ -1,0 +1,14 @@
+{% extends "pacientes/base.html" %}
+
+{% block titulo %}Iniciar sesión de diálisis | HemoVision Alert{% endblock %}
+
+{% block contenido %}
+  <h1>Iniciar sesión de diálisis</h1>
+
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Iniciar sesión de diálisis</button>
+    <a href="{% url 'pacientes:sesiones' %}">Cancelar</a>
+  </form>
+{% endblock %}
