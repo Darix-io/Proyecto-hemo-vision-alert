@@ -23,7 +23,12 @@ class Sesion(models.Model):
                 fields=["estacion"],
                 condition=models.Q(fin__isnull=True),
                 name="una_sesion_activa_por_estacion",
-            )
+            ),
+            models.UniqueConstraint(
+                fields=["paciente"],
+                condition=models.Q(fin__isnull=True),
+                name="una_sesion_activa_por_paciente",
+            ),
         ]
 
     def __str__(self):

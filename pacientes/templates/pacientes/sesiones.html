@@ -1,0 +1,59 @@
+{% extends "pacientes/base.html" %}
+
+{% block titulo %}Sesiones | HemoVision Alert{% endblock %}
+
+{% block contenido %}
+  <h1>Sesiones de diálisis</h1>
+  <p>
+    <a href="{% url 'pacientes:sesion_iniciar' %}">Iniciar sesión de diálisis</a> |
+    <a href="{% url 'pacientes:lista' %}">Volver a pacientes</a>
+  </p>
+
+  <h2>Sesiones activas</h2>
+  {% if activas %}
+    <table>
+      <thead>
+        <tr><th>Estación</th><th>Paciente</th><th>Inicio</th><th>Acción</th></tr>
+      </thead>
+      <tbody>
+        {% for sesion in activas %}
+          <tr>
+            <td>{{ sesion.estacion }}</td>
+            <td>{{ sesion.paciente.codigo }}</td>
+            <td>{{ sesion.inicio|date:"d/m/Y H:i" }}</td>
+            <td>
+              <form method="post" action="{% url 'pacientes:sesion_cerrar' sesion.pk %}"
+                    onsubmit="return confirm('¿Cerrar esta sesión de diálisis? No se puede reabrir.');">
+                {% csrf_token %}
+                <button type="submit">Cerrar sesión de diálisis</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No hay sesiones activas.</p>
+  {% endif %}
+
+  <h2>Sesiones cerradas</h2>
+  {% if cerradas %}
+    <table>
+      <thead>
+        <tr><th>Estación</th><th>Paciente</th><th>Inicio</th><th>Fin</th></tr>
+      </thead>
+      <tbody>
+        {% for sesion in cerradas %}
+          <tr>
+            <td>{{ sesion.estacion }}</td>
+            <td>{{ sesion.paciente.codigo }}</td>
+            <td>{{ sesion.inicio|date:"d/m/Y H:i" }}</td>
+            <td>{{ sesion.fin|date:"d/m/Y H:i" }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>Todavía no hay sesiones cerradas.</p>
+  {% endif %}
+{% endblock %}
