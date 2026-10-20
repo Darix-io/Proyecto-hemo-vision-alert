@@ -80,6 +80,10 @@ erDiagram
 - **Datos personales del paciente** (nombre, edad, peso, diagnóstico). El prototipo los muestra, pero RF-07 pide un registro mínimo y dice "no exigir nombre".
 - **Evidencia visual y su retención** (RF-14, RF-17), **auditoría** (RF-16) y **reglas versionadas** como tabla propia (RF-12). Todavía no hay información para modelarlas.
 
+## Decisiones ya tomadas
+
+- Un paciente no puede tener dos sesiones activas a la vez (decisión del Product Owner, 18 de octubre de 2026). Ya está implementado.
+
 ## Preguntas abiertas
 
 1. ¿La estación pasa a ser una tabla propia? Hoy es un texto dentro de la sesión.
