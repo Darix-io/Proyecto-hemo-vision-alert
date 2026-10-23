@@ -1,6 +1,6 @@
 # Modelo de datos propuesto — HemoVision Alert
 
-*Versión 1.0 — PROPUESTA: no está implementado ni acordado por el equipo*
+*Versión 1.2 — PROPUESTA: lo ya implementado está indicado en el texto*
 
 ## Descripción
 
@@ -83,6 +83,18 @@ erDiagram
 ## Decisiones ya tomadas
 
 - Un paciente no puede tener dos sesiones activas a la vez (decisión del Product Owner, 18 de octubre de 2026). Ya está implementado.
+
+- Regla de riesgo, evento visual y alerta ya están implementados (ver `modelo-de-datos-actual.md`), con las diferencias indicadas arriba.
+
+## Diferencias con lo ya implementado
+
+El motor de riesgo (M3) ya existe y se aparta en algunos puntos de este diagrama:
+
+- La **alerta** se vincula a la sesión (no a una cámara) y **agrupa varios eventos**.
+- La **hora, la cámara y la confianza** (llamada `valor`) se guardan en el **evento visual**, no en la alerta.
+- La **cámara** es un texto opcional del evento: no existe una tabla de cámaras.
+- La **regla de riesgo** es una tabla con versiones, y la alerta guarda la regla que usó.
+- La **revisión**, la **estación** como tabla y los **roles de usuario** siguen sin implementar.
 
 ## Preguntas abiertas
 
