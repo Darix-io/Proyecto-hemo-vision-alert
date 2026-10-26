@@ -1,6 +1,6 @@
 # Diagrama de casos de uso — HemoVision Alert
 
-*Versión 1.1*
+*Versión 1.2 — estado según el código de develop al 19 de octubre de 2026*
 
 ## Descripción
 
@@ -48,16 +48,16 @@ flowchart LR
 
 ## Casos de uso
 
-| Caso de uso | Requisito | Módulo |
-|---|---|---|
-| Iniciar y cerrar sesión | RF-10 | M6 Seguridad |
-| Supervisar estaciones | RF-09 / HU-01 | M4 Dashboard |
-| Ver detalle del aviso | RF-04 / HU-02 | M3 y M4 |
-| Revisar alerta | RF-05 / HU-03 | M4, M5 y M6 |
-| Registrar paciente | RF-07 | M1 Pacientes |
-| Gestionar sesión de diálisis | RF-08 | M1 |
-| Consultar historial | RF-06 / HU-04 | M5 Historial |
-| Administrar cuentas y roles | RF-11 | M6 Seguridad |
+| Caso de uso | Requisito | Módulo | Estado |
+|---|---|---|---|
+| Iniciar y cerrar sesión | RF-10 | M6 Seguridad | Implementado |
+| Supervisar estaciones | RF-09 / HU-01 | M4 Dashboard | Pendiente |
+| Ver detalle del aviso | RF-04 / HU-02 | M3 y M4 | Pendiente |
+| Revisar alerta | RF-05 / HU-03 | M4, M5 y M6 | Pendiente |
+| Registrar paciente | RF-07 | M1 Pacientes | Implementado |
+| Gestionar sesión de diálisis | RF-08 | M1 | Implementado (sin "detener captura", que depende de M2) |
+| Consultar historial | RF-06 / HU-04 | M5 Historial | Pendiente |
+| Administrar cuentas y roles | RF-11 | M6 Seguridad | Pendiente |
 
 ## Funciones automáticas del sistema
 

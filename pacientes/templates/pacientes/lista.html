@@ -5,6 +5,7 @@
 {% block contenido %}
   <h1>Pacientes</h1>
   <p><a href="{% url 'pacientes:registrar' %}">Registrar paciente</a></p>
+    <p><a href="{% url 'pacientes:sesiones' %}">Sesiones de diálisis</a></p>
 
   {% if pacientes %}
     <table>

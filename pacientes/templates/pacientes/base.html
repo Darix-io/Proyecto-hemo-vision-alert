@@ -6,6 +6,13 @@
   <title>{% block titulo %}HemoVision Alert{% endblock %}</title>
 </head>
 <body>
+  {% if user.is_authenticated %}
+    <form method="post" action="{% url 'seguridad:logout' %}">
+      {% csrf_token %}
+      <button type="submit">Cerrar sesión</button>
+    </form>
+  {% endif %}
+
   <main>
     {% if messages %}
       <div role="status">

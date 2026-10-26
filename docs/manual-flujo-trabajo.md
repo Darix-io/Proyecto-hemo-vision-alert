@@ -1,5 +1,5 @@
 # Manual de flujo de trabajo — HemoVision Alert
-*Versión 1.0 — 12 de octubre de 2026*
+*Versión 1.1 — 19 de octubre de 2026*
 
 ## 1. Propósito y alcance
 
@@ -19,7 +19,7 @@ Este manual explica cómo trabaja el equipo con Git y GitHub en el proyecto Hemo
 
 | Rama | Uso |
 |---|---|
-| `master` | Versión estable. No se trabaja directo en ella. [Por definir con el líder técnico] |
+| `master` | Versión estable. No se trabaja directo en ella. Se actualiza solo con un Pull Request de `develop` hacia `master`, al terminar una ronda de trabajo del equipo. |
 | `develop` | Rama de integración. Recibe el trabajo ya revisado. |
 | `feature/...` | Una tarea de código. Se crea desde `develop`. |
 | `docs/...` | Una tarea de documentación. Se crea desde `develop`. |
@@ -82,7 +82,8 @@ Cada integrante crea su propia base de datos local y su propio superusuario, por
 | Pantalla que termina en `(END)` | Es el visor de Git | Pulsar `q` |
 | Un Pull Request se unió a la rama equivocada | Se dejó `master` como base | Avisar al líder técnico antes de hacer nada. Revertir deshace todo el Pull Request, no solo una parte; para volver a subir el trabajo se usa `git cherry-pick` desde una rama nueva |
 | Una app desaparece de `INSTALLED_APPS` | Se editó la lista de `settings.py` y se borró una línea sin querer | Revisar el cambio con `git diff` antes del commit (ver sección 9) |
-
+| `UNIQUE constraint failed` al ejecutar `migrate` | Los datos de prueba de la base local incumplen una regla nueva | Corregir o cerrar el dato duplicado y repetir `migrate` |
+| Una pantalla redirige a `/login/` | Ahora las pantallas exigen haber iniciado sesión | Iniciar sesión; si no hay usuario en la base local, `python manage.py createsuperuser` |
 
 ## 9. Lista de verificación antes de abrir un Pull Request
 
@@ -91,3 +92,14 @@ Cada integrante crea su propia base de datos local y su propio superusuario, por
 3. Después de `git fetch origin`, `git --no-pager diff --stat origin/develop` muestra solo los archivos de la tarea.
 4. Si se editó `config/settings.py`, revisar con `git --no-pager diff origin/develop -- config/settings.py` que no desapareció ninguna app de `INSTALLED_APPS`.
 5. La base del Pull Request dice `develop`.
+6. Si cambió un modelo, el archivo de migración está incluido y `python manage.py makemigrations --check --dry-run` dice `No changes detected`.
+
+## 10. Actualizar master
+
+1. Todos los Pull Requests de la ronda están unidos a `develop`.
+2. En `develop`, `python manage.py check` y `python manage.py test` no muestran errores.
+3. El líder técnico revisa qué recibirá `master` con `git fetch origin` y `git --no-pager diff --stat origin/master origin/develop`.
+4. Se abre un Pull Request con base `master` y comparación `develop`. Es la **única excepción** a la regla de que la base debe ser `develop`.
+5. Lo revisa el responsable de calidad.
+6. Se une con **Merge pull request**, sin las variantes "Squash" ni "Rebase".
+7. Después de unirlo, **no se borra la rama `develop`**.

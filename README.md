@@ -27,3 +27,10 @@ Reglas:
 2. Hacer commits pequeños con mensajes claros.
 3. Subir tu rama y abrir un Pull Request hacia `develop`.
 4. Otro compañero revisa antes de unir los cambios.
+
+## Documentación
+
+- [Manual de flujo de trabajo](docs/manual-flujo-trabajo.md)
+- [Documentación de módulos](docs/modulos.md)
+- [Backlog de requerimientos](docs/backlog.md)
+- [Diagramas](docs/diagramas/)
