@@ -1,6 +1,6 @@
 # Diseño de M3: motor de riesgo y reglas
 
-*Versión 1.0 — confirmada por el Product Owner el 20 de octubre de 2026 (valores de umbral y ventana de ejemplo)*
+*Versión 1.1 — decisiones confirmadas por el Product Owner el 28 de octubre de 2026*
 
 ## Alcance
 
@@ -31,12 +31,24 @@ Los valores 90 y 60 son de ejemplo, no vienen del backlog.
 
 El evento se vincula a la sesión de diálisis, que ya conoce al paciente y la estación.
 
+## Decisiones confirmadas por el Product Owner
+
+Confirmadas el 28 de octubre de 2026.
+
+- Un evento normal genera alerta: sí. Condición: el Dashboard (M4) y el historial (M5) deben filtrar por estado.
+- Al agrupar eventos, la alerta toma el estado más grave de sus eventos y no baja: sí. Condición: solo la revisión humana (RF-05) cierra una alerta crítica.
+- La ventana se mide desde el evento más cercano de la misma clase y sesión.
+
+## Condiciones para M4 y M5
+
+- El Dashboard y el historial deben filtrar las alertas por estado: las alertas de estado "normal" no se muestran como alertas que requieren atención.
+- La alerta crítica solo la cierra una revisión humana (RF-05). Cuando se construya la revisión, la alerta necesitará un campo de estado de revisión (pendiente o revisada).
+- Cuando se construya la revisión, un evento nuevo no debe unirse a una alerta ya revisada: debe abrir una alerta nueva.
+
 ## Preguntas abiertas
 
 1. ¿Qué clases de evento existen además de hemorragia?
 2. ¿Cuándo corresponde el estado "atención"?
 3. ¿El umbral y la ventana son iguales para todas las clases o cada clase tiene los suyos?
 4. ¿Quién configura las reglas? Eso toca a M6 (RF-12).
-5. ¿Un evento normal debe generar alerta? Hoy sí, con estado normal.
-6. Al agrupar eventos, la alerta toma el estado más grave y nunca baja (propuesto).
-7. La ventana se mide desde el evento más cercano de la misma clase y sesión (propuesto).
+5. ¿Debe haber un límite máximo de duración de una alerta? Hoy una alerta puede extenderse mientras sigan llegando eventos a menos de la ventana de distancia.

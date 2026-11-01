@@ -40,8 +40,8 @@
 | ID | Elemento | Prioridad | Historia de usuario | Criterio de aceptación | Estado |
 |---|---|---|---|---|---|
 | RF-01 | Capturar video de la sesión *(también en M2)* | Alta | HU-05 | Abrir una sesión con video controlado de 10 min; comprobar marcas de tiempo y que al cierre no se generen nuevos eventos. | Pendiente |
-| RF-07 | Registrar paciente mínimo | Alta | - | Crear dos códigos ficticios distintos y recuperarlos; rechazar código vacío o duplicado; no exigir nombre. | Pendiente |
-| RF-08 | Gestionar sesiones | Alta | - | Iniciar, consultar y cerrar sesión; rechazar inicio en estación ocupada; conservar vínculos históricos y detener captura al cierre. | Pendiente |
+| RF-07 | Registrar paciente mínimo | Alta | - | Crear dos códigos ficticios distintos y recuperarlos; rechazar código vacío o duplicado; no exigir nombre. | Implementado |
+| RF-08 | Gestionar sesiones | Alta | - | Iniciar, consultar y cerrar sesión; rechazar inicio en estación ocupada; conservar vínculos históricos y detener captura al cierre. | Implementado (sin “detener captura”, que depende de M2) |
 | RNF-05 | Integridad de registros *(también en M5)* | Alta | HU-04* | Identificadores de evento únicos; escritura atómica de revisión con su auditoría; ningún registro referencia una sesión inexistente. | Pendiente |
 
 ### M2 — Captura y visión artificial
@@ -63,9 +63,9 @@
 
 | ID | Elemento | Prioridad | Historia de usuario | Criterio de aceptación | Estado |
 |---|---|---|---|---|---|
-| RF-03 | Clasificar y agrupar eventos | Alta | HU-01, HU-02 | Entradas sintéticas bajo, igual y sobre el umbral producen el estado definido por la regla; repetir el mismo evento no crea otra alerta. | Pendiente |
-| RF-04 | Mostrar avisos explicables *(también en M4)* | Alta | HU-02, HU-05* | Inyectar alertas de prueba con valores conocidos y comparar cada campo y su orden temporal; no inventar valores ausentes. | Pendiente |
-| RF-12 | Configurar reglas versionadas *(también en M6)* | Alta | - | Rechazar ventana no positiva y clase inexistente; aplicar regla válida a entradas de prueba; conservar versión en el evento. | Pendiente |
+| RF-03 | Clasificar y agrupar eventos | Alta | HU-01, HU-02 | Entradas sintéticas bajo, igual y sobre el umbral producen el estado definido por la regla; repetir el mismo evento no crea otra alerta. | Implementado (lógica y datos, sin pantallas) |
+| RF-04 | Mostrar avisos explicables *(también en M4)* | Alta | HU-02, HU-05* | Inyectar alertas de prueba con valores conocidos y comparar cada campo y su orden temporal; no inventar valores ausentes. | Parcial: datos listos, falta la pantalla en M4 |
+| RF-12 | Configurar reglas versionadas *(también en M6)* | Alta | - | Rechazar ventana no positiva y clase inexistente; aplicar regla válida a entradas de prueba; conservar versión en el evento. | Parcial: reglas versionadas listas, falta configurarlas desde M6 |
 | RNF-01 | Tiempo de respuesta *(también en M4)* | Alta | - | El 95 % de 100 eventos de prueba se muestra en ≤5 s desde su recepción en el backend, con 40 estaciones simuladas. | Pendiente |
 | RNF-07 | Modularidad *(también en M2, M4)* | Media | HU-06* | Sustituir la fuente por un simulador sin cambiar el panel ni el contrato de eventos. | Pendiente |
 
@@ -102,7 +102,7 @@
 | ID | Elemento | Prioridad | Historia de usuario | Criterio de aceptación | Estado |
 |---|---|---|---|---|---|
 | RF-05 | Registrar revisión humana *(también en M4, M5)* | Alta | HU-03 | Confirmar y descartar eventos de prueba; una cuenta sin permiso no puede validar; una observación deja pendiente el aviso. | Pendiente |
-| RF-10 | Autenticar y cerrar acceso | Alta | HU-03*, HU-07* | Credenciales válidas abren sesión, inválidas no; tras cerrar no se consultan datos; verificar negativas por rol y ámbito. | Pendiente |
+| RF-10 | Autenticar y cerrar acceso | Alta | HU-03*, HU-07* | Credenciales válidas abren sesión, inválidas no; tras cerrar no se consultan datos; verificar negativas por rol y ámbito. | Implementado |
 | RF-11 | Administrar cuentas y roles | Alta | - | Desactivar cuenta bloquea nuevos accesos; cambio de rol restringe la siguiente petición; TI y administrador sin permiso clínico no validan alertas. | Pendiente |
 | RF-12 | Configurar reglas versionadas *(también en M3)* | Alta | - | Rechazar ventana no positiva y clase inexistente; aplicar regla válida a entradas de prueba; conservar versión en el evento. | Pendiente |
 | RF-16 | Registrar auditoría *(también en M5)* | Alta | - | Ejecutar una acción de cada tipo y contrastar el registro; un intento de edición ordinaria es rechazado; no guardar contraseñas ni video. | Pendiente |
