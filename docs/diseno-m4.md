@@ -1,6 +1,6 @@
 # Diseño de M4: Dashboard de monitoreo
 
-*Versión 0.1 — PROPUESTA pendiente de confirmación del Product Owner — 2 de noviembre de 2026*
+*Versión 1.0 — decisiones del Product Owner confirmadas el 3 de noviembre de 2026; pendiente la aprobación del líder técnico (salas y decisiones técnicas)*
 
 ## Alcance
 
@@ -10,34 +10,54 @@ Primera versión del Dashboard (RF-09, supervisar estaciones), con datos simulad
 
 - **RF-09:** cargar 40 estaciones simuladas con estados conocidos; comprobar identificación, filtro y detalle; "sin señal" se diferencia de "normal".
 - **RNF-01:** el 95 % de 100 eventos de prueba se muestra en 5 segundos o menos, con 40 estaciones simuladas.
+- **RNF-03:** una fuente sin fotogramas durante 10 segundos pasa a sin señal; la recuperación es en 10 segundos o menos.
 
-## Decisiones propuestas
+## Decisiones confirmadas por el Product Owner
 
-| Tema | Propuesta | Quién confirma |
+Confirmadas el 3 de noviembre de 2026.
+
+1. **Sin señal:** una estación con paciente está sin señal si nunca tuvo señal o pasan más de 10 segundos sin fotogramas, y se recupera en 10 segundos o menos (RNF-03).
+2. **Sin señal y alerta crítica a la vez:** la estación se muestra como crítica, con una marca visible de "sin señal". Una alerta crítica abierta nunca se oculta. En los contadores se cuenta una sola vez, en "críticas".
+3. **Actualización:** el Dashboard se actualiza solo cada 3 segundos, tiene un botón para actualizar a mano, muestra la hora de la última actualización y un aviso visible si deja de actualizarse (valor de ejemplo: más de 10 segundos sin lograr actualizar).
+4. **Quién lo ve:** por ahora, cualquier usuario con sesión iniciada, de forma temporal. Condición: cuando se construya RF-11, el Dashboard se restringe a los roles con permiso clínico. El Dashboard muestra solo códigos de paciente, nunca datos personales.
+5. **Salas:** dos salas simuladas, Sala A (EST-01 a EST-20) y Sala B (EST-21 a EST-40), con 20 estaciones cada una. Pendiente de la aprobación del líder técnico.
+6. **Estaciones libres:** se muestran siempre, en estilo neutro (gris claro, con la palabra "Libre"), al final del orden y con un contador "Libres". Una estación libre no se evalúa como "sin señal". Condición futura: cuando exista M2, una estación libre con señal activa muestra un aviso de posible sesión sin iniciar.
+
+## Decisiones técnicas propuestas (líder técnico)
+
+| Tema | Propuesta |
+|---|---|
+| Estación | Pasa a ser una tabla propia (código único como EST-07, sala, activa). La sesión se vincula a ella, con una migración que convierte los textos actuales |
+| Última señal | Cada estación guarda la fecha de su última señal |
+| Datos simulados | Un comando que carga las 40 estaciones con estados conocidos, para probar y mostrar |
+| Página de inicio | La dirección raíz (`/`) lleva al Dashboard; hoy muestra "no encontrado" |
+
+## Estados y orden
+
+- Estados que se muestran: sin señal, crítica, en atención y normal, además de "libre". "En atención" queda reservado hasta que se defina cuándo aplica.
+- Orden: las críticas primero; las libres al final.
+- Contadores: estaciones activas, normales, en atención, críticas, sin señal y libres.
+- Filtros: por estado y por sala, y búsqueda por código de estación o de paciente.
+- Condición heredada de M3: las alertas normales no se muestran como alertas que requieren atención.
+
+## Detalle de una estación
+
+Paciente (código), sesión, cámara, hora del evento, evento detectado, confianza y tiempo transcurrido, con el aviso de que requiere revisión humana y no es un diagnóstico.
+
+## Datos de prueba propuestos
+
+| Estado | Estaciones | Cantidad |
 |---|---|---|
-| Estación | Pasa a ser una tabla propia (código único como EST-07, sala, activa). La sesión se vincula a ella, con una migración que convierte los textos actuales | Líder técnico |
-| Última señal | Cada estación guarda la fecha de su última señal | Líder técnico |
-| Estados que se muestran | Sin señal, crítica, en atención y normal, como el prototipo. "En atención" queda reservado hasta que se defina cuándo aplica | Product Owner |
-| Sin señal | Una estación está sin señal si nunca tuvo señal o la última supera 5 minutos (valor de ejemplo) | Product Owner |
-| Estado crítico | Una estación con una alerta crítica abierta, hasta que la revisión humana la cierre (esa revisión todavía no existe) | Product Owner |
-| Estado normal | Una estación con señal reciente y sin alerta crítica abierta | Product Owner |
-| Contadores | Estaciones activas, normales, en atención, críticas y sin señal, como el prototipo | Product Owner |
-| Filtros | Por estado y por sala, y búsqueda por código de estación o de paciente | Product Owner |
-| Orden | Las críticas primero | Product Owner |
-| Detalle de una estación | Paciente, sesión, cámara, hora del evento, evento detectado, confianza y tiempo transcurrido, con el aviso de que requiere revisión humana y no es un diagnóstico | Product Owner |
-| Datos simulados | Un comando que carga 40 estaciones con estados conocidos, para probar y mostrar | Líder técnico |
-| Condición heredada de M3 | Se filtra por estado: las alertas normales no se muestran como alertas que requieren atención | Product Owner |
+| Crítica | EST-07 (Sala A) y EST-28 (Sala B) | 2 |
+| Crítica y además sin señal | EST-12 (Sala A) | 1 |
+| Sin señal | EST-19 (Sala A), EST-33 y EST-40 (Sala B) | 3 |
+| Libres | EST-16, EST-17 y EST-18 (Sala A); EST-37, EST-38 y EST-39 (Sala B) | 6 |
+| Normal | Las 28 restantes | 28 |
+| En atención | Ninguna | 0 |
 
-## Pantallas propuestas
-
-- Dashboard de estaciones: tarjetas, contadores y filtros.
-- Detalle de una estación.
+Contadores esperados: 34 activas, 28 normales, 3 críticas, 3 sin señal y 6 libres.
 
 ## Preguntas abiertas
 
-1. ¿Cuántos minutos sin señal convierten una estación en "sin señal"? (ejemplo: 5)
-2. Si una estación está sin señal y además tiene una alerta crítica abierta, ¿cuál se muestra?
-3. ¿El Dashboard se actualiza solo cada cierto tiempo o con un botón?
-4. ¿Qué usuarios ven el Dashboard? Hoy, cualquiera con sesión iniciada; los roles llegan con RF-11.
-5. ¿Cuántas salas hay y cómo se llaman?
-6. ¿Qué se muestra de una estación libre, sin sesión activa?
+1. ¿Cuándo corresponde el estado "en atención"?
+2. ¿Debe haber un límite máximo de duración de una alerta? (heredada de M3)
