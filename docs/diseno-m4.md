@@ -24,6 +24,7 @@ Confirmadas el 3 de noviembre de 2026.
 6. **Estaciones libres:** se muestran siempre, en estilo neutro (gris claro, con la palabra "Libre"), al final del orden y con un contador "Libres". Una estación libre no se evalúa como "sin señal". Condición futura: cuando exista M2, una estación libre con señal activa muestra un aviso de posible sesión sin iniciar.
 
 ## Decisiones técnicas confirmadas (líder técnico)
+
 | Tema | Propuesta |
 |---|---|
 | Estación | Pasa a ser una tabla propia (código único como EST-07, sala, activa). La sesión se vincula a ella, con una migración que convierte los textos actuales |
