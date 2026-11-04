@@ -1,6 +1,6 @@
 # Diseño de M4: Dashboard de monitoreo
 
-*Versión 1.0 — decisiones del Product Owner confirmadas el 3 de noviembre de 2026; pendiente la aprobación del líder técnico (salas y decisiones técnicas)*
+## Decisiones técnicas confirmadas (líder técnico)
 
 ## Alcance
 
