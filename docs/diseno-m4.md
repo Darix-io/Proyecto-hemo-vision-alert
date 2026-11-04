@@ -20,11 +20,10 @@ Confirmadas el 3 de noviembre de 2026.
 2. **Sin señal y alerta crítica a la vez:** la estación se muestra como crítica, con una marca visible de "sin señal". Una alerta crítica abierta nunca se oculta. En los contadores se cuenta una sola vez, en "críticas".
 3. **Actualización:** el Dashboard se actualiza solo cada 3 segundos, tiene un botón para actualizar a mano, muestra la hora de la última actualización y un aviso visible si deja de actualizarse (valor de ejemplo: más de 10 segundos sin lograr actualizar).
 4. **Quién lo ve:** por ahora, cualquier usuario con sesión iniciada, de forma temporal. Condición: cuando se construya RF-11, el Dashboard se restringe a los roles con permiso clínico. El Dashboard muestra solo códigos de paciente, nunca datos personales.
-5. **Salas:** dos salas simuladas, Sala A (EST-01 a EST-20) y Sala B (EST-21 a EST-40), con 20 estaciones cada una. Pendiente de la aprobación del líder técnico.
+5. **Salas:** dos salas simuladas, Sala A (EST-01 a EST-20) y Sala B (EST-21 a EST-40), con 20 estaciones cada una. Aprobadas por el líder técnico.
 6. **Estaciones libres:** se muestran siempre, en estilo neutro (gris claro, con la palabra "Libre"), al final del orden y con un contador "Libres". Una estación libre no se evalúa como "sin señal". Condición futura: cuando exista M2, una estación libre con señal activa muestra un aviso de posible sesión sin iniciar.
 
-## Decisiones técnicas propuestas (líder técnico)
-
+## Decisiones técnicas confirmadas (líder técnico)
 | Tema | Propuesta |
 |---|---|
 | Estación | Pasa a ser una tabla propia (código único como EST-07, sala, activa). La sesión se vincula a ella, con una migración que convierte los textos actuales |
