@@ -5,6 +5,7 @@ from django.urls import reverse
 from .models import Estacion, Paciente, Sesion
 from django.db import IntegrityError, transaction
 from django.db.models import ProtectedError
+from django.core.management import call_command
 
 
 class RegistroPacienteTests(TestCase):
@@ -153,3 +154,21 @@ class SesionesTests(TestCase):
         respuesta = self.client.get(reverse("pacientes:sesiones"))
         destino = f"{reverse('seguridad:login')}?next={reverse('pacientes:sesiones')}"
         self.assertRedirects(respuesta, destino)
+
+class CargarEstacionesTests(TestCase):
+    def test_carga_40_estaciones_en_dos_salas(self):
+        call_command("cargar_estaciones", verbosity=0)
+        self.assertEqual(Estacion.objects.count(), 40)
+        self.assertEqual(Estacion.objects.filter(sala="Sala A").count(), 20)
+        self.assertEqual(Estacion.objects.filter(sala="Sala B").count(), 20)
+
+    def test_se_puede_repetir_sin_duplicar(self):
+        call_command("cargar_estaciones", verbosity=0)
+        call_command("cargar_estaciones", verbosity=0)
+        self.assertEqual(Estacion.objects.count(), 40)
+
+    def test_reactiva_una_estacion_desactivada(self):
+        call_command("cargar_estaciones", verbosity=0)
+        Estacion.objects.filter(codigo="EST-05").update(activa=False)
+        call_command("cargar_estaciones", verbosity=0)
+        self.assertTrue(Estacion.objects.get(codigo="EST-05").activa)       
