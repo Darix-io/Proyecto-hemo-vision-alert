@@ -5,7 +5,7 @@ from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.utils import timezone
 
-from pacientes.models import Paciente, Sesion
+from pacientes.models import Estacion, Paciente, Sesion
 
 from .models import Alerta, EventoVisual, ReglaRiesgo
 from .services import crear_regla, regla_activa, registrar_evento
@@ -52,7 +52,8 @@ class ReglasTests(TestCase):
 class EventosTests(TestCase):
     def setUp(self):
         paciente = Paciente.objects.create(codigo="PAC-001")
-        self.sesion = Sesion.objects.create(paciente=paciente, estacion="EST-07")
+        estacion = Estacion.objects.create(codigo="EST-07")
+        self.sesion = Sesion.objects.create(paciente=paciente, estacion=estacion)
         self.regla = crear_regla(CLASE, 90, 60)
         self.t0 = timezone.now()
 
@@ -98,7 +99,8 @@ class EventosTests(TestCase):
 
     def test_eventos_de_otra_sesion_no_se_agrupan(self):
         otro = Paciente.objects.create(codigo="PAC-002")
-        otra_sesion = Sesion.objects.create(paciente=otro, estacion="EST-08")
+        otra_estacion = Estacion.objects.create(codigo="EST-08")
+        otra_sesion = Sesion.objects.create(paciente=otro, estacion=otra_estacion)
         _, alerta1, _ = self.registrar("E-1", 95)
         _, alerta2, _ = self.registrar("E-2", 95, sesion=otra_sesion)
         self.assertNotEqual(alerta1, alerta2)

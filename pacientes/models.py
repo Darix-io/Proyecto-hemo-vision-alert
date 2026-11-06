@@ -8,12 +8,25 @@ class Paciente(models.Model):
     def __str__(self):
         return self.codigo
 
-    
+
+class Estacion(models.Model):
+    codigo = models.CharField(max_length=30, unique=True)
+    sala = models.CharField(max_length=40, blank=True)
+    activa = models.BooleanField(default=True)
+    ultima_senal = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["codigo"]
+
+    def __str__(self):
+        return self.codigo
+
+
 class Sesion(models.Model):
     paciente = models.ForeignKey(
         Paciente, on_delete=models.PROTECT, related_name="sesiones"
     )
-    estacion = models.CharField(max_length=30)
+    estacion = models.ForeignKey(Estacion, on_delete=models.PROTECT, related_name="sesiones")
     inicio = models.DateTimeField(auto_now_add=True)
     fin = models.DateTimeField(null=True, blank=True)
 
