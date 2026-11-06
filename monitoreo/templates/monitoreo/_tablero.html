@@ -1,0 +1,27 @@
+<p>Última actualización: <strong>{{ actualizado|time:"H:i:s" }}</strong></p>
+
+<ul class="contadores">
+  <li class="critica">Críticas: <strong>{{ contadores.criticas }}</strong></li>
+  <li class="sin_senal">Sin señal: <strong>{{ contadores.sin_senal }}</strong></li>
+  <li class="atencion">En atención: <strong>{{ contadores.atenciones }}</strong></li>
+  <li class="normal">Normales: <strong>{{ contadores.normales }}</strong></li>
+  <li class="libre">Libres: <strong>{{ contadores.libres }}</strong></li>
+</ul>
+
+{% for sala in salas %}
+  <section>
+    <h2>{{ sala.nombre }}</h2>
+    <div class="rejilla">
+      {% for t in sala.tarjetas %}
+        <article class="tarjeta {{ t.estado }}">
+          <h3>{{ t.codigo }}</h3>
+          <p class="estado">{{ t.etiqueta }}</p>
+          {% if t.paciente %}<p>Paciente: {{ t.paciente }}</p>{% endif %}
+          {% if t.sin_senal and t.estado == "critica" %}
+            <p class="marca">SIN SEÑAL</p>
+          {% endif %}
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+{% endfor %}

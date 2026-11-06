@@ -1,0 +1,60 @@
+{% extends "pacientes/base.html" %}
+{% block titulo %}Dashboard · HemoVision Alert{% endblock %}
+
+{% block contenido %}
+<style>
+  .contadores { display: flex; gap: 12px; list-style: none; padding: 0; flex-wrap: wrap; }
+  .contadores li { padding: 8px 14px; border-radius: 6px; border: 1px solid #999; }
+  .rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .tarjeta { border: 2px solid #999; border-radius: 8px; padding: 8px; }
+  .tarjeta h3 { margin: 0 0 4px; }
+  .tarjeta p { margin: 2px 0; }
+  .critica { background: #fde2e2; border-color: #c62828; }
+  .sin_senal { background: #eceff1; border: 2px dashed #455a64; }
+  .atencion { background: #fff3cd; border-color: #f9a825; }
+  .normal { background: #e3f4e6; border-color: #2e7d32; }
+  .libre { background: #f5f5f5; border-color: #ccc; color: #777; }
+  .marca { font-weight: bold; color: #c62828; }
+  .estado { font-weight: bold; }
+  #aviso { background: #fff3cd; border: 2px solid #f9a825; padding: 8px; }
+</style>
+
+<h1>Dashboard de monitoreo</h1>
+<p>
+  <button type="button" id="actualizar">Actualizar ahora</button>
+  <a href="{% url 'pacientes:sesiones' %}">Sesiones</a>
+</p>
+<p id="aviso" role="alert" hidden>
+  El Dashboard dejó de actualizarse. Los datos mostrados pueden estar desactualizados.
+</p>
+
+<div id="tablero">{% include "monitoreo/_tablero.html" %}</div>
+
+<script>
+(function () {
+  var url = "{% url 'monitoreo:dashboard' %}?parcial=1";
+  var tablero = document.getElementById("tablero");
+  var aviso = document.getElementById("aviso");
+  var ultimoExito = Date.now();
+
+  function actualizar() {
+    fetch(url, { credentials: "same-origin" })
+      .then(function (r) {
+        if (!r.ok || r.redirected) { throw new Error("sin actualizar"); }
+        return r.text();
+      })
+      .then(function (html) {
+        tablero.innerHTML = html;
+        ultimoExito = Date.now();
+      })
+      .catch(function () {});
+  }
+
+  setInterval(actualizar, 3000);
+  setInterval(function () {
+    aviso.hidden = (Date.now() - ultimoExito) <= 10000;
+  }, 1000);
+  document.getElementById("actualizar").addEventListener("click", actualizar);
+})();
+</script>
+{% endblock %}
