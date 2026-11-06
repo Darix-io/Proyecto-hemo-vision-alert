@@ -1,5 +1,5 @@
 from django import forms
-from .models import Paciente, Sesion
+from .models import Estacion, Paciente, Sesion
 
 class PacienteForm(forms.ModelForm):
     class Meta:
@@ -21,11 +21,15 @@ class SesionForm(forms.ModelForm):
         labels = {"paciente": "Paciente", "estacion": "Estación"}
         error_messages = {
             "paciente": {"required": "Seleccione un paciente."},
-            "estacion": {"required": "La estación es obligatoria."},
+            "estacion": {"required": "Seleccione una estación."},
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["estacion"].queryset = Estacion.objects.filter(activa=True)
+
     def clean_estacion(self):
-        estacion = self.cleaned_data["estacion"].strip().upper()
+        estacion = self.cleaned_data["estacion"]
         if Sesion.objects.filter(estacion=estacion, fin__isnull=True).exists():
             raise forms.ValidationError("La estación ya tiene una sesión activa.")
         return estacion
