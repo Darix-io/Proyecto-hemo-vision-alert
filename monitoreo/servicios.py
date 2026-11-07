@@ -14,6 +14,13 @@ ETIQUETAS = {
     "normal": "Normal",
     "libre": "Libre",
 }
+SIMBOLOS = {
+    "critica": "▲",
+    "sin_senal": "○",
+    "atencion": "●",
+    "normal": "✓",
+    "libre": "–",
+}
 ORDEN = {"critica": 0, "sin_senal": 1, "atencion": 2, "normal": 3, "libre": 4}
 
 
@@ -57,20 +64,25 @@ def construir_tablero(ahora=None):
             estado = estado_de_alertas(estados_por_sesion.get(sesion.pk, set()))
             if sin_senal and estado != "critica":
                 estado = "sin_senal"
-        por_sala.setdefault(estacion.sala or "Sin sala", []).append(
+        sala = estacion.sala or "Sin sala"
+        por_sala.setdefault(sala, []).append(
             {
                 "codigo": estacion.codigo,
+                "estacion_id": estacion.pk,
+                "sala": sala,
                 "estado": estado,
                 "etiqueta": ETIQUETAS[estado],
+                "simbolo": SIMBOLOS[estado],
                 "sin_senal": sin_senal,
                 "paciente": paciente,
+                "ultima_senal": estacion.ultima_senal,
             }
         )
 
     salas = []
     contadores = {
         "criticas": 0, "sin_senal": 0, "atenciones": 0,
-        "normales": 0, "libres": 0, "total": 0,
+        "normales": 0, "libres": 0, "total": 0, "activas": 0,
     }
     clave = {
         "critica": "criticas", "sin_senal": "sin_senal", "atencion": "atenciones",
@@ -83,6 +95,13 @@ def construir_tablero(ahora=None):
         for t in tarjetas:
             contadores[clave[t["estado"]]] += 1
             contadores["total"] += 1
+            if t["estado"] != "libre":
+                contadores["activas"] += 1
         salas.append({"nombre": nombre, "tarjetas": tarjetas})
 
-    return {"salas": salas, "contadores": contadores, "actualizado": ahora}
+    return {
+        "salas": salas,
+        "contadores": contadores,
+        "actualizado": ahora,
+        "nombres_salas": sorted(por_sala),
+    }

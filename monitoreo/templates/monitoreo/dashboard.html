@@ -3,9 +3,26 @@
 {% block encabezado %}Monitoreo en tiempo real{% endblock %}
 
 {% block contenido %}
-<p>
+<div class="filtros">
+  <input type="search" id="buscar" placeholder="Buscar por paciente o estación…" aria-label="Buscar">
+  <label>Estado
+    <select id="f-estado">
+      <option value="">Todos</option>
+      <option value="critica">Crítica</option>
+      <option value="sin_senal">Sin señal</option>
+      <option value="atencion">En atención</option>
+      <option value="normal">Normal</option>
+      <option value="libre">Libre</option>
+    </select>
+  </label>
+  <label>Sala
+    <select id="f-sala">
+      <option value="">Todas</option>
+      {% for nombre in nombres_salas %}<option value="{{ nombre }}">{{ nombre }}</option>{% endfor %}
+    </select>
+  </label>
   <button type="button" id="actualizar">Actualizar ahora</button>
-</p>
+</div>
 <p id="aviso" role="alert" hidden>
   El Dashboard dejó de actualizarse. Los datos mostrados pueden estar desactualizados.
 </p>
@@ -17,7 +34,26 @@
   var url = "{% url 'monitoreo:dashboard' %}?parcial=1";
   var tablero = document.getElementById("tablero");
   var aviso = document.getElementById("aviso");
+  var buscar = document.getElementById("buscar");
+  var fEstado = document.getElementById("f-estado");
+  var fSala = document.getElementById("f-sala");
   var ultimoExito = Date.now();
+
+  function filtrar() {
+    var texto = buscar.value.trim().toLowerCase();
+    tablero.querySelectorAll(".sala").forEach(function (sala) {
+      var visibles = 0;
+      var salaOk = !fSala.value || sala.dataset.sala === fSala.value;
+      sala.querySelectorAll(".tarjeta").forEach(function (t) {
+        var ok = salaOk &&
+          (!fEstado.value || t.dataset.estado === fEstado.value) &&
+          (!texto || t.dataset.texto.indexOf(texto) !== -1);
+        t.hidden = !ok;
+        if (ok) { visibles++; }
+      });
+      sala.hidden = visibles === 0;
+    });
+  }
 
   function actualizar() {
     fetch(url, { credentials: "same-origin" })
@@ -28,10 +64,14 @@
       .then(function (html) {
         tablero.innerHTML = html;
         ultimoExito = Date.now();
+        filtrar();
       })
       .catch(function () {});
   }
 
+  [buscar, fEstado, fSala].forEach(function (el) {
+    el.addEventListener("input", filtrar);
+  });
   setInterval(actualizar, 3000);
   setInterval(function () {
     aviso.hidden = (Date.now() - ultimoExito) <= 10000;

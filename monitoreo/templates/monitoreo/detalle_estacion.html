@@ -1,0 +1,31 @@
+{% extends "pacientes/base.html" %}
+{% block titulo %}{{ estacion.codigo }} · HemoVision Alert{% endblock %}
+{% block encabezado %}Estación {{ estacion.codigo }}{% endblock %}
+
+{% block contenido %}
+<p><a class="boton boton-claro" href="{% url 'monitoreo:dashboard' %}">← Volver al Dashboard</a></p>
+
+<table>
+  <tr><th>Estación</th><td>{{ estacion.codigo }} ({{ estacion.sala|default:"Sin sala" }})</td></tr>
+  <tr><th>Paciente</th><td>{% if sesion %}{{ sesion.paciente.codigo }}{% else %}Estación libre{% endif %}</td></tr>
+  <tr><th>Inicio de sesión</th><td>{% if sesion %}{{ sesion.inicio|date:"d/m/Y H:i" }}{% else %}—{% endif %}</td></tr>
+  <tr><th>Última señal</th><td>{% if estacion.ultima_senal %}{{ estacion.ultima_senal|date:"d/m/Y H:i:s" }}{% else %}Sin señal registrada{% endif %}</td></tr>
+</table>
+
+<h2>Alertas de la sesión</h2>
+{% if alertas %}
+<table>
+  <tr><th>Evento</th><th>Estado</th><th>Actualizada</th></tr>
+  {% for a in alertas %}
+  <tr>
+    <td>{{ a.get_clase_evento_display }}</td>
+    <td>{{ a.get_estado_display }}</td>
+    <td>{{ a.actualizada|date:"d/m/Y H:i:s" }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p>Sin alertas.</p>
+{% endif %}
+<p><em>Este aviso requiere revisión humana y no constituye un diagnóstico médico.</em></p>
+{% endblock %}
