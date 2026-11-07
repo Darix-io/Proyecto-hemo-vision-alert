@@ -1,27 +1,51 @@
-<!DOCTYPE html>
+{% load static %}<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block titulo %}HemoVision Alert{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'pacientes/hemovision.css' %}">
 </head>
 <body>
-  {% if user.is_authenticated %}
-    <form method="post" action="{% url 'seguridad:logout' %}">
-      {% csrf_token %}
-      <button type="submit">Cerrar sesión</button>
-    </form>
-  {% endif %}
-
-  <main>
-    {% if messages %}
-      <div role="status">
-        {% for mensaje in messages %}
-          <p>{{ mensaje }}</p>
-        {% endfor %}
+  <div class="app">
+    {% if user.is_authenticated %}
+    <aside class="menu">
+      <p class="marca">HemoVision</p>
+      <p class="submarca">Alert Monitor</p>
+      <nav aria-label="Principal">
+        <a href="{% url 'monitoreo:dashboard' %}"
+           {% if request.resolver_match.app_name == 'monitoreo' %}class="activo" aria-current="page"{% endif %}>Dashboard</a>
+        <a href="{% url 'pacientes:lista' %}"
+           {% if request.resolver_match.view_name in 'pacientes:lista pacientes:registrar' %}class="activo" aria-current="page"{% endif %}>Pacientes</a>
+        <a href="{% url 'pacientes:sesiones' %}"
+           {% if request.resolver_match.url_name in 'sesiones sesion_iniciar' %}class="activo" aria-current="page"{% endif %}>Sesiones</a>
+      </nav>
+      <div class="usuario">
+        {{ user.get_username }}
+        <form method="post" action="{% url 'seguridad:logout' %}">
+          {% csrf_token %}
+          <button type="submit">Cerrar sesión</button>
+        </form>
       </div>
+    </aside>
     {% endif %}
-    {% block contenido %}{% endblock %}
-  </main>
+
+    <div class="principal">
+      <header class="barra">
+        <h1>{% block encabezado %}{% block titulo_pagina %}HemoVision Alert{% endblock %}{% endblock %}</h1>
+        <span class="estado-sistema">Sistema activo · {% now "H:i" %}<span class="en-vivo">● LIVE</span></span>
+      </header>
+      <main>
+        {% if messages %}
+          <div class="mensajes" role="status">
+            {% for mensaje in messages %}
+              <p>{{ mensaje }}</p>
+            {% endfor %}
+          </div>
+        {% endif %}
+        {% block contenido %}{% endblock %}
+      </main>
+    </div>
+  </div>
 </body>
 </html>
