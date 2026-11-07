@@ -144,3 +144,18 @@ class DashboardVistaTests(TestCase):
         self.assertEqual(respuesta.status_code, 200)
         self.assertNotContains(respuesta, "<html")
         self.assertContains(respuesta, "Sala A")
+
+class CargarDemoTests(TestCase):
+    def test_carga_el_escenario_y_se_puede_repetir(self):
+        call_command("cargar_demo", verbosity=0)
+        call_command("cargar_demo", verbosity=0)
+        self.assertEqual(Sesion.objects.filter(fin__isnull=True).count(), 12)
+        tablero = construir_tablero()
+        self.assertEqual(tablero["contadores"]["criticas"], 3)
+        self.assertEqual(tablero["contadores"]["libres"], 28)
+
+    def test_critica_sin_senal_sigue_critica(self):
+        call_command("cargar_demo", verbosity=0)
+        t = tarjeta(construir_tablero(), "EST-02")
+        self.assertEqual(t["estado"], "critica")
+        self.assertTrue(t["sin_senal"])
