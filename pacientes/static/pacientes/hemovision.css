@@ -174,3 +174,5 @@ a.tarjeta { display: block; color: inherit; text-decoration: none; }
 a.tarjeta:hover { box-shadow: 0 2px 8px rgba(0,0,0,.18); }
 .revisar { font-weight: 700; color: var(--rojo); }
 [hidden] { display: none !important; }
+.contadores .ind-activas { background: var(--turquesa); color: #fff; border-color: var(--turquesa); }
+.menu .marca { color: #fff; }
