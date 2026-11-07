@@ -1,26 +1,31 @@
 <p>Última actualización: <strong>{{ actualizado|time:"H:i:s" }}</strong></p>
 
 <ul class="contadores">
-  <li class="critica">Críticas: <strong>{{ contadores.criticas }}</strong></li>
-  <li class="sin_senal">Sin señal: <strong>{{ contadores.sin_senal }}</strong></li>
-  <li class="atencion">En atención: <strong>{{ contadores.atenciones }}</strong></li>
-  <li class="normal">Normales: <strong>{{ contadores.normales }}</strong></li>
-  <li class="libre">Libres: <strong>{{ contadores.libres }}</strong></li>
+  <li class="ind-activas">Estaciones activas <strong>{{ contadores.activas }}</strong> de {{ contadores.total }}</li>
+  <li class="ind-normal">✓ Normal <strong>{{ contadores.normales }}</strong></li>
+  <li class="ind-atencion">● En atención <strong>{{ contadores.atenciones }}</strong></li>
+  <li class="ind-critica">▲ Críticas <strong>{{ contadores.criticas }}</strong></li>
+  <li class="ind-sin">○ Sin señal <strong>{{ contadores.sin_senal }}</strong></li>
+  <li class="ind-libre">Libres <strong>{{ contadores.libres }}</strong></li>
 </ul>
 
 {% for sala in salas %}
-  <section>
+  <section class="sala" data-sala="{{ sala.nombre }}">
     <h2>{{ sala.nombre }}</h2>
     <div class="rejilla">
       {% for t in sala.tarjetas %}
-        <article class="tarjeta {{ t.estado }}">
+        <a class="tarjeta {{ t.estado }}" href="{% url 'monitoreo:detalle_estacion' t.codigo %}"
+           data-estado="{{ t.estado }}"
+           data-texto="{{ t.codigo|lower }} {{ t.paciente|default:''|lower }}">
           <h3>{{ t.codigo }}</h3>
-          <p class="estado">{{ t.etiqueta }}</p>
+          <p class="estado">{{ t.simbolo }} {{ t.etiqueta }}</p>
           {% if t.paciente %}<p>Paciente: {{ t.paciente }}</p>{% endif %}
+          {% if t.ultima_senal and t.paciente %}<p>Última lectura: {{ t.ultima_senal|time:"H:i:s" }}</p>{% endif %}
           {% if t.sin_senal and t.estado == "critica" %}
-            <p class="marca">SIN SEÑAL</p>
+            <p class="marca">○ SIN SEÑAL</p>
           {% endif %}
-        </article>
+          {% if t.estado == "critica" %}<p class="revisar">› Revisar alerta urgente</p>{% endif %}
+        </a>
       {% endfor %}
     </div>
   </section>

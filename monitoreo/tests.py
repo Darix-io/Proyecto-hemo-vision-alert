@@ -144,3 +144,50 @@ class DashboardVistaTests(TestCase):
         self.assertEqual(respuesta.status_code, 200)
         self.assertNotContains(respuesta, "<html")
         self.assertContains(respuesta, "Sala A")
+
+class CargarDemoTests(TestCase):
+    def test_carga_el_escenario_y_se_puede_repetir(self):
+        call_command("cargar_demo", verbosity=0)
+        call_command("cargar_demo", verbosity=0)
+        self.assertEqual(Sesion.objects.filter(fin__isnull=True).count(), 12)
+        tablero = construir_tablero()
+        self.assertEqual(tablero["contadores"]["criticas"], 3)
+        self.assertEqual(tablero["contadores"]["libres"], 28)
+
+    def test_critica_sin_senal_sigue_critica(self):
+        call_command("cargar_demo", verbosity=0)
+        t = tarjeta(construir_tablero(), "EST-02")
+        self.assertEqual(t["estado"], "critica")
+        self.assertTrue(t["sin_senal"])
+
+class DetalleEstacionTests(TestCase):
+    def setUp(self):
+        call_command("cargar_estaciones", verbosity=0)
+        usuario = get_user_model().objects.create_user(
+            username="enfermeria", password="clave-de-prueba-123"
+        )
+        self.client.force_login(usuario)
+
+    def test_detalle_de_estacion_libre(self):
+        r = self.client.get(reverse("monitoreo:detalle_estacion", args=["EST-01"]))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Estación libre")
+
+    def test_detalle_con_sesion_y_alerta(self):
+        call_command("cargar_demo", verbosity=0)
+        r = self.client.get(reverse("monitoreo:detalle_estacion", args=["EST-01"]))
+        self.assertContains(r, "DEMO-001")
+        self.assertContains(r, "Crítica")
+
+    def test_estacion_inexistente_da_404(self):
+        r = self.client.get(reverse("monitoreo:detalle_estacion", args=["EST-99"]))
+        self.assertEqual(r.status_code, 404)
+
+    def test_exige_iniciar_sesion(self):
+        self.client.logout()
+        r = self.client.get(reverse("monitoreo:detalle_estacion", args=["EST-01"]))
+        self.assertEqual(r.status_code, 302)
+
+    def test_el_tablero_cuenta_estaciones_activas(self):
+        call_command("cargar_demo", verbosity=0)
+        self.assertEqual(construir_tablero()["contadores"]["activas"], 12)
