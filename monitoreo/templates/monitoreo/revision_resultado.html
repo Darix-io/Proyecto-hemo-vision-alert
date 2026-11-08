@@ -1,0 +1,29 @@
+{% extends "pacientes/base.html" %}
+{% block titulo %}Revisión registrada · HemoVision Alert{% endblock %}
+{% block encabezado %}Revisión de alerta médica{% endblock %}
+
+{% block contenido %}
+<section class="ficha normal">
+  <h2>✓ Revisión registrada</h2>
+  {% if cierra %}
+    <p>La alerta quedó cerrada: {{ revision.get_decision_display }}.</p>
+  {% else %}
+    <p>Observación registrada. La alerta sigue pendiente hasta que se confirme o se descarte.</p>
+  {% endif %}
+</section>
+
+<table>
+  <tr><th>Estación</th><td>{{ alerta.sesion.estacion.codigo }}</td></tr>
+  <tr><th>Paciente</th><td>{{ alerta.sesion.paciente.codigo }}</td></tr>
+  <tr><th>Evento reportado</th><td>{{ alerta.get_clase_evento_display }}</td></tr>
+  <tr><th>Decisión</th><td>{{ revision.get_decision_display }}</td></tr>
+  <tr><th>Registrado por</th><td>{{ revision.revisor.get_username }}</td></tr>
+  <tr><th>Hora del registro</th><td>{{ revision.creada|time:"H:i" }}</td></tr>
+  <tr><th>Observación médica</th><td>{{ revision.observacion|default:"—" }}</td></tr>
+</table>
+
+<p>
+  <a class="boton" href="{% url 'monitoreo:dashboard' %}">Volver al Dashboard</a>
+  {% if not cierra %}<a class="boton boton-claro" href="{% url 'monitoreo:detalle_alerta' alerta.pk %}">Seguir con la alerta</a>{% endif %}
+</p>
+{% endblock %}

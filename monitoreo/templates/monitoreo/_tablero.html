@@ -14,7 +14,8 @@
     <h2>{{ sala.nombre }}</h2>
     <div class="rejilla">
       {% for t in sala.tarjetas %}
-        <a class="tarjeta {{ t.estado }}" href="{% url 'monitoreo:detalle_estacion' t.codigo %}"
+        <a class="tarjeta {{ t.estado }}"
+           href="{% if t.alerta_id %}{% url 'monitoreo:detalle_alerta' t.alerta_id %}{% else %}{% url 'monitoreo:detalle_estacion' t.codigo %}{% endif %}"
            data-estado="{{ t.estado }}"
            data-texto="{{ t.codigo|lower }} {{ t.paciente|default:''|lower }}">
           <h3>{{ t.codigo }}</h3>
@@ -22,7 +23,7 @@
           {% if t.paciente %}<p>Paciente: {{ t.paciente }}</p>{% endif %}
           {% if t.ultima_senal and t.paciente %}<p>Última lectura: {{ t.ultima_senal|time:"H:i:s" }}</p>{% endif %}
           {% if t.sin_senal and t.estado == "critica" %}
-            <p class="marca">○ SIN SEÑAL</p>
+            <p class="marca-alerta">○ SIN SEÑAL</p>
           {% endif %}
           {% if t.estado == "critica" %}<p class="revisar">› Revisar alerta urgente</p>{% endif %}
         </a>

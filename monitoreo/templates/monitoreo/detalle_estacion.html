@@ -15,12 +15,14 @@
 <h2>Alertas de la sesión</h2>
 {% if alertas %}
 <table>
-  <tr><th>Evento</th><th>Estado</th><th>Actualizada</th></tr>
+  <tr><th>Evento</th><th>Estado</th><th>Situación</th><th>Actualizada</th><th></th></tr>
   {% for a in alertas %}
   <tr>
     <td>{{ a.get_clase_evento_display }}</td>
     <td>{{ a.get_estado_display }}</td>
+    <td>{% if a.cerrada %}Revisada{% else %}Pendiente{% endif %}</td>
     <td>{{ a.actualizada|date:"d/m/Y H:i:s" }}</td>
+    <td><a href="{% url 'monitoreo:detalle_alerta' a.pk %}">{% if a.cerrada %}Ver{% else %}Revisar{% endif %}</a></td>
   </tr>
   {% endfor %}
 </table>

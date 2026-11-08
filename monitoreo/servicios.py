@@ -3,7 +3,7 @@ from datetime import timedelta
 from django.utils import timezone
 
 from pacientes.models import Estacion, Sesion
-from riesgo.models import Alerta
+from riesgo.models import DECISIONES_DE_CIERRE, Alerta
 
 SEGUNDOS_SIN_SENAL = 10
 
@@ -25,7 +25,7 @@ ORDEN = {"critica": 0, "sin_senal": 1, "atencion": 2, "normal": 3, "libre": 4}
 
 
 def estado_de_alertas(estados):
-    """Toma el estado más grave de las alertas de la sesión."""
+    """Toma el estado más grave de las alertas pendientes de la sesión."""
     if Alerta.Estado.CRITICA in estados:
         return "critica"
     if Alerta.Estado.ATENCION in estados:
@@ -44,16 +44,24 @@ def construir_tablero(ahora=None):
             fin__isnull=True, estacion__in=estaciones
         ).select_related("paciente")
     }
+
+    # Solo cuentan las alertas pendientes: las confirmadas o descartadas ya se cerraron.
+    pares = (
+        Alerta.objects.filter(sesion_id__in=[s.pk for s in sesiones.values()])
+        .exclude(revisiones__decision__in=DECISIONES_DE_CIERRE)
+        .values_list("sesion_id", "estado", "pk")
+    )
     estados_por_sesion = {}
-    pares = Alerta.objects.filter(
-        sesion_id__in=[s.pk for s in sesiones.values()]
-    ).values_list("sesion_id", "estado")
-    for sesion_id, estado in pares:
+    critica_por_sesion = {}
+    for sesion_id, estado, pk in pares:
         estados_por_sesion.setdefault(sesion_id, set()).add(estado)
+        if estado == Alerta.Estado.CRITICA:
+            critica_por_sesion[sesion_id] = max(pk, critica_por_sesion.get(sesion_id, 0))
 
     por_sala = {}
     for estacion in estaciones:
         sesion = sesiones.get(estacion.pk)
+        alerta_id = None
         if sesion is None:
             estado, sin_senal, paciente = "libre", False, None
         else:
@@ -62,6 +70,7 @@ def construir_tablero(ahora=None):
                 estacion.ultima_senal is None or estacion.ultima_senal <= limite
             )
             estado = estado_de_alertas(estados_por_sesion.get(sesion.pk, set()))
+            alerta_id = critica_por_sesion.get(sesion.pk)
             if sin_senal and estado != "critica":
                 estado = "sin_senal"
         sala = estacion.sala or "Sin sala"
@@ -76,6 +85,7 @@ def construir_tablero(ahora=None):
                 "sin_senal": sin_senal,
                 "paciente": paciente,
                 "ultima_senal": estacion.ultima_senal,
+                "alerta_id": alerta_id,
             }
         )
 
