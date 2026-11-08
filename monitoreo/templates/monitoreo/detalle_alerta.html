@@ -1,0 +1,67 @@
+{% extends "pacientes/base.html" %}
+{% block titulo %}Alerta {{ alerta.sesion.estacion.codigo }} · HemoVision Alert{% endblock %}
+{% block encabezado %}Estación {{ alerta.sesion.estacion.codigo }} · Detalle de suceso{% endblock %}
+
+{% block contenido %}
+<p>
+  <a class="boton boton-claro" href="{% url 'monitoreo:dashboard' %}">← Volver al Dashboard</a>
+  <a class="boton boton-claro" href="{% url 'monitoreo:detalle_estacion' alerta.sesion.estacion.codigo %}">Ver estación</a>
+</p>
+
+<section class="ficha {{ alerta.estado }}">
+  <h2>Estación {{ alerta.sesion.estacion.codigo }} · {{ alerta.get_estado_display }}</h2>
+  <p>Paciente asociado: <strong>{{ alerta.sesion.paciente.codigo }}</strong></p>
+  <p>Tiempo transcurrido: {{ alerta.creada|timesince }}</p>
+</section>
+
+<div class="dos-columnas">
+  <section>
+    <h2>Parámetros del suceso</h2>
+    <table>
+      <tr><th>Sesión de diálisis</th><td>S-{{ alerta.sesion.pk }}</td></tr>
+      <tr><th>Cámara asociada</th><td>{{ evento.camara|default:"No registrada" }}</td></tr>
+      <tr><th>Hora del evento</th><td>{% if evento %}{{ evento.hora_evento|time:"H:i:s" }}{% else %}—{% endif %}</td></tr>
+      <tr><th>Evento detectado</th><td>{{ alerta.get_clase_evento_display }}</td></tr>
+      <tr><th>Confianza del algoritmo</th><td>{% if evento and evento.valor is not None %}{{ evento.valor|floatformat:1 }}%{% else %}No disponible{% endif %}</td></tr>
+    </table>
+    <p class="aviso-clinico">Este aviso requiere revisión humana y no constituye un diagnóstico médico. Siga los protocolos clínicos de la institución.</p>
+  </section>
+
+  <section>
+    <h2>Evidencia visual {{ evento.camara }}</h2>
+    <div class="evidencia">Evidencia visual (imagen simulada)</div>
+  </section>
+</div>
+
+{% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+
+{% if cerrada %}
+  <p class="aviso-clinico">Esta alerta ya fue revisada. No admite una nueva decisión.</p>
+{% else %}
+  <form method="post">
+    {% csrf_token %}
+    <label for="observacion">Observación clínica</label>
+    <textarea id="observacion" name="observacion" placeholder="Describa lo verificado (obligatoria para registrar una observación)">{{ observacion }}</textarea>
+    <div class="acciones">
+      <button type="submit" name="accion" value="observar" class="boton-claro">Registrar observación</button>
+      <button type="submit" name="accion" value="descartar" class="boton-claro">Descartar alerta</button>
+      <button type="submit" name="accion" value="confirmar">Confirmar alerta</button>
+    </div>
+  </form>
+{% endif %}
+
+{% if revisiones %}
+<h2>Revisiones de esta alerta</h2>
+<table>
+  <tr><th>Fecha</th><th>Decisión</th><th>Revisor</th><th>Observación</th></tr>
+  {% for r in revisiones %}
+  <tr>
+    <td>{{ r.creada|date:"d/m/Y H:i" }}</td>
+    <td>{{ r.get_decision_display }}</td>
+    <td>{{ r.revisor.get_username }}</td>
+    <td>{{ r.observacion|default:"—" }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endif %}
+{% endblock %}
