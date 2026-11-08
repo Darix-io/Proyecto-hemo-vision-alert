@@ -176,3 +176,14 @@ a.tarjeta:hover { box-shadow: 0 2px 8px rgba(0,0,0,.18); }
 [hidden] { display: none !important; }
 .contadores .ind-activas { background: var(--turquesa); color: #fff; border-color: var(--turquesa); }
 .menu .marca { color: #fff; }
+
+.marca-alerta { font-weight: 700; color: var(--rojo); }
+.ficha { background: #fff; border: 2px solid var(--borde); border-radius: 10px; padding: 12px 16px; margin-bottom: 16px; }
+.ficha h2 { margin: 0 0 6px; }
+.dos-columnas { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.evidencia { border: 2px dashed var(--gris); border-radius: 10px; min-height: 220px; display: flex; align-items: center; justify-content: center; text-align: center; color: var(--gris); background: var(--gris-fondo); padding: 16px; }
+.acciones { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; margin-top: 12px; }
+.error { background: var(--rojo-fondo); border: 1px solid var(--rojo); color: var(--rojo); border-radius: 8px; padding: 8px 12px; }
+.aviso-clinico { border: 1px dashed var(--gris); border-radius: 8px; padding: 8px 12px; font-size: .85rem; color: var(--gris); }
+textarea { width: 100%; min-height: 80px; }
+@media (max-width: 700px) { .dos-columnas { grid-template-columns: 1fr; } }
