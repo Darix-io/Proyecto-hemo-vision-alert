@@ -45,3 +45,34 @@ class PantallasTests(TestCase):
             reverse("seguridad:login"), {"username": "enfermeria", "password": "mala"}
         )
         self.assertContains(r, "Credenciales incorrectas.")
+ 
+class ListaPacientesFiltrosTests(TestCase):
+    def setUp(self):
+        usuario = get_user_model().objects.create_user(
+            username="enfermeria", password="clave-de-prueba-123"
+        )
+        self.client.force_login(usuario)
+        estacion = Estacion.objects.create(
+            codigo="EST-01", sala="Sala A", ultima_senal=timezone.now()
+        )
+        p1 = Paciente.objects.create(codigo="PAC-001")
+        for n in range(2, 15):
+            Paciente.objects.create(codigo=f"PAC-{n:03d}")
+        Sesion.objects.create(paciente=p1, estacion=estacion)
+        self.url = reverse("pacientes:lista")
+
+    def test_filtra_por_sala(self):
+        r = self.client.get(self.url + "?sala=Sala A")
+        self.assertContains(r, "PAC-001")
+        self.assertNotContains(r, "PAC-002")
+
+    def test_filtra_sin_sesion(self):
+        r = self.client.get(self.url + "?estado=sin_sesion")
+        self.assertNotContains(r, "PAC-001")
+        self.assertContains(r, "PAC-002")
+
+    def test_pagina_de_diez_con_contador(self):
+        r = self.client.get(self.url)
+        self.assertContains(r, "Mostrando 10 de 14")
+        r2 = self.client.get(self.url + "?pagina=2")
+        self.assertContains(r2, "Mostrando 4 de 14")

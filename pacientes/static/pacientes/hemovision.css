@@ -203,3 +203,4 @@ textarea { width: 100%; min-height: 80px; }
 .login-caja button.ancho { width: 100%; }
 .nota { font-size: .8rem; color: var(--gris); }
 @media (max-width: 700px) { .login-pagina { grid-template-columns: 1fr; } .login-panel, .login-caja { padding: 24px; } }
+.migas { font-size: .85rem; color: var(--gris); margin: 0 0 8px; }
