@@ -3,6 +3,9 @@
 {% block encabezado %}Estación {{ alerta.sesion.estacion.codigo }} · Detalle de suceso{% endblock %}
 
 {% block contenido %}
+
+<p class="migas"><a href="{% url 'monitoreo:dashboard' %}">Dashboard</a> › {{ alerta.sesion.estacion.codigo }} · <strong>{{ alerta.get_estado_display }}</strong>
+</p>
 <p>
   <a class="boton boton-claro" href="{% url 'monitoreo:dashboard' %}">← Volver al Dashboard</a>
   <a class="boton boton-claro" href="{% url 'monitoreo:detalle_estacion' alerta.sesion.estacion.codigo %}">Ver estación</a>
