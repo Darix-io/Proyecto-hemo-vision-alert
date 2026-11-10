@@ -5,14 +5,27 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 from .forms import PacienteForm, SesionForm
 from .models import Paciente, Sesion
+from monitoreo.servicios import construir_tablero
 
 
 
 @login_required
 def listar_pacientes(request):
+    q = request.GET.get("q", "").strip()
     pacientes = Paciente.objects.order_by("codigo")
-    return render(request, "pacientes/lista.html", {"pacientes": pacientes})
-
+    if q:
+        pacientes = pacientes.filter(codigo__icontains=q)
+    por_codigo = {}
+    for sala in construir_tablero()["salas"]:
+        for t in sala["tarjetas"]:
+            if t["paciente"]:
+                por_codigo[t["paciente"]] = t
+    filas = [{"codigo": p.codigo, "tarjeta": por_codigo.get(p.codigo)} for p in pacientes]
+    return render(
+        request,
+        "pacientes/lista.html",
+        {"pacientes": pacientes, "filas": filas, "q": q},
+    )
 
 @login_required
 def registrar_paciente(request):

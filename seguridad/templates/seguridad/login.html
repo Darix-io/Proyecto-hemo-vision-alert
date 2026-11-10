@@ -1,32 +1,53 @@
-<!DOCTYPE html>
+{% load static %}<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Iniciar sesión | HemoVision Alert</title>
+  <link rel="stylesheet" href="{% static 'pacientes/hemovision.css' %}">
 </head>
-<body>
-  <main>
+<body class="login-pagina">
+  <section class="login-panel">
+    <p class="marca-login">HemoVision</p>
+    <h2>Monitoreo inteligente para hemodiálisis</h2>
+    <p>Acceso seguro y en tiempo real a las métricas críticas del paciente, detección automática de anomalías y alertas tempranas para el personal clínico.</p>
+  </section>
+
+  <main class="login-caja">
     <h1>Iniciar sesión</h1>
     <p>Sistema de monitoreo de hemodiálisis</p>
 
     {% if form.non_field_errors %}
-      <div role="alert">
+      <div role="alert" class="error">
         {% for error in form.non_field_errors %}
-          <p>{{ error }}</p>
+          <p>⚠ {{ error }}</p>
         {% endfor %}
       </div>
     {% endif %}
 
     <form method="post">
       {% csrf_token %}
-      <p>{{ form.username.label_tag }} {{ form.username }}</p>
-      <p>{{ form.password.label_tag }} {{ form.password }}</p>
+      <p>{{ form.username.label_tag }}<br>{{ form.username }}</p>
+      <p>
+        {{ form.password.label_tag }}
+        <button type="button" id="mostrar" class="boton-claro">Mostrar</button><br>
+        {{ form.password }}
+      </p>
       {% if next %}
         <input type="hidden" name="next" value="{{ next }}">
       {% endif %}
-      <button type="submit">Ingresar al sistema</button>
+      <button type="submit" class="ancho">Ingresar al sistema</button>
     </form>
+    <p class="nota">Acceso restringido a personal médico de hemodiálisis.</p>
   </main>
+
+  <script>
+    document.getElementById("mostrar").addEventListener("click", function () {
+      var c = document.getElementById("id_password");
+      var oculto = c.type === "password";
+      c.type = oculto ? "text" : "password";
+      this.textContent = oculto ? "Ocultar" : "Mostrar";
+    });
+  </script>
 </body>
 </html>

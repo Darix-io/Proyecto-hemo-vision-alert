@@ -1,23 +1,40 @@
 {% extends "pacientes/base.html" %}
 
 {% block titulo %}Pacientes | HemoVision Alert{% endblock %}
+{% block encabezado %}Gestión de pacientes{% endblock %}
 
 {% block contenido %}
-  <h1>Pacientes</h1>
-  <p><a href="{% url 'pacientes:registrar' %}">Registrar paciente</a></p>
-    <p><a href="{% url 'pacientes:sesiones' %}">Sesiones de diálisis</a></p>
+  <div class="filtros">
+    <form method="get" class="filtros">
+      <input type="search" name="q" value="{{ q }}" placeholder="Buscar por código…" aria-label="Buscar paciente">
+      <button type="submit" class="boton-claro">Buscar</button>
+    </form>
+    <a class="boton" href="{% url 'pacientes:registrar' %}">+ Registrar paciente</a>
+    <a class="boton boton-claro" href="{% url 'pacientes:sesiones' %}">Sesiones de diálisis</a>
+  </div>
 
   {% if pacientes %}
     <table>
       <thead>
-        <tr><th>Código</th></tr>
+        <tr><th>Código</th><th>Estación</th><th>Estado actual</th></tr>
       </thead>
       <tbody>
-        {% for paciente in pacientes %}
-          <tr><td>{{ paciente.codigo }}</td></tr>
+        {% for fila in filas %}
+          <tr>
+            <td>{{ fila.codigo }}</td>
+            {% if fila.tarjeta %}
+              <td><a href="{% url 'monitoreo:detalle_estacion' fila.tarjeta.codigo %}">{{ fila.tarjeta.codigo }}</a></td>
+              <td><span class="chip {{ fila.tarjeta.estado }}">{{ fila.tarjeta.simbolo }} {{ fila.tarjeta.etiqueta }}</span></td>
+            {% else %}
+              <td>—</td>
+              <td>Sin sesión</td>
+            {% endif %}
+          </tr>
         {% endfor %}
       </tbody>
     </table>
+  {% elif q %}
+    <p>Sin resultados para "{{ q }}".</p>
   {% else %}
     <p>Todavía no hay pacientes registrados.</p>
   {% endif %}

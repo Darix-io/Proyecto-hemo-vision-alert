@@ -1,14 +1,25 @@
 {% extends "pacientes/base.html" %}
 
 {% block titulo %}Registrar paciente | HemoVision Alert{% endblock %}
+{% block encabezado %}Gestión de pacientes{% endblock %}
 
 {% block contenido %}
-  <h1>Registrar paciente</h1>
-
-  <form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Registrar paciente</button>
-    <a href="{% url 'pacientes:lista' %}">Cancelar</a>
-  </form>
+  <section class="ficha formulario">
+    <h2>Registrar paciente</h2>
+    <p>Complete el código del paciente para darlo de alta en el sistema.</p>
+    <form method="post">
+      {% csrf_token %}
+      {% for campo in form %}
+        <p>
+          <label for="{{ campo.id_for_label }}">{{ campo.label }}</label><br>
+          {{ campo }}
+          {{ campo.errors }}
+        </p>
+      {% endfor %}
+      <div class="acciones">
+        <a class="boton boton-claro" href="{% url 'pacientes:lista' %}">Cancelar</a>
+        <button type="submit">Registrar paciente</button>
+      </div>
+    </form>
+  </section>
 {% endblock %}
