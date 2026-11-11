@@ -11,6 +11,7 @@ import requests
 from ultralytics import YOLO
 
 from pose import MAREO, MOVIMIENTO, Detector
+from sangre import DetectorSangre, fraccion_roja, zonas
 
 API = os.environ.get("VISION_API", "http://127.0.0.1:8000/api/vision")
 TOKEN = os.environ.get("VISION_TOKEN", "")
@@ -23,6 +24,8 @@ DELTA_CAIDA = float(os.environ.get("VISION_DELTA_CAIDA", "0.25"))
 VELOCIDAD = float(os.environ.get("VISION_VELOCIDAD", "6.0"))
 SIMULAR_HEMORRAGIA = os.environ.get("VISION_SIMULAR_HEMORRAGIA", "0") == "1"
 UMBRAL_SIMULACION = float(os.environ.get("VISION_UMBRAL", "0.60"))
+DETECTAR_ROJO = os.environ.get("VISION_ROJO", "1") == "1"
+DELTA_ROJO = float(os.environ.get("VISION_DELTA_ROJO", "0.06"))
 SEGUNDOS_LATIDO = 3
 SEGUNDOS_ENTRE_EVENTOS = 10
 NOMBRES = {MAREO: "POSIBLE MAREO", MOVIMIENTO: "MOVIMIENTO BRUSCO", "hemorragia": "SIMULACION"}
@@ -130,6 +133,8 @@ def main():
     if not camara.isOpened():
         raise SystemExit("No se pudo abrir la cámara. Pruebe VISION_INDICE=1.")
     detector = Detector(delta_caida=DELTA_CAIDA, velocidad=VELOCIDAD)
+    sangre = DetectorSangre(delta=DELTA_ROJO)
+    rects_sangre = []
 
     iniciar_servidor_de_video()
     print(f"Servicio activo: {ESTACION} / {CAMARA_ID}. Ctrl + C para detener.")
@@ -151,6 +156,7 @@ def main():
             if _recalibrar.is_set():
                 _recalibrar.clear()
                 detector.reiniciar_calibracion()
+                sangre.reiniciar()
                 print("Recalibrando: el paciente debe quedarse quieto 5 segundos.")
             if ahora - ultimo_latido >= SEGUNDOS_LATIDO:
                 codigo, _ = enviar("senal", {"estacion": ESTACION})
@@ -165,11 +171,18 @@ def main():
                 activos = set()
                 if i is None:
                     detector.sin_persona()
+                    rects_sangre = []
+                    sangre.actualizar(ahora, None)
                 else:
                     kp = ultimo.keypoints
                     xy = kp.xy[i].tolist()
                     conf = kp.conf[i].tolist() if kp.conf is not None else [1.0] * len(xy)
                     activos = detector.actualizar(ahora, xy, conf)
+                    if DETECTAR_ROJO:
+                        rects_sangre = zonas(xy, conf, cuadro.shape)
+                        frac = fraccion_roja(cuadro, rects_sangre) if rects_sangre else None
+                        if sangre.actualizar(ahora, frac):
+                            activos.add("hemorragia")
                     if SIMULAR_HEMORRAGIA and float(ultimo.boxes.conf[i]) >= UMBRAL_SIMULACION:
                         activos.add("hemorragia")
                 for clase in activos:
@@ -193,6 +206,12 @@ def main():
 
             if ahora - ultima_publicacion >= 0.1:
                 vista = ultimo.plot(img=cuadro.copy()) if ultimo is not None else cuadro.copy()
+                for x1, y1, x2, y2 in rects_sangre:
+                    cv2.rectangle(vista, (x1, y1), (x2, y2), (0, 0, 255), 1)
+                if DETECTAR_ROJO and sangre.fraccion is not None:
+                    est = f"base {sangre.base*100:.1f}%" if sangre.calibrado else "calibrando"
+                    cv2.putText(vista, f"rojo {sangre.fraccion*100:.1f}% ({est})",
+                                (8, vista.shape[0] - 32), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 0, 255), 2)
                 rotular(vista, detector, recientes, ahora)
                 publicar(vista)
                 ultima_publicacion = ahora
