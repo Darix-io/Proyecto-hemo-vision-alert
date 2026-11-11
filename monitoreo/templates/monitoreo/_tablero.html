@@ -17,6 +17,7 @@
         <a class="tarjeta {{ t.estado }}"
            href="{% if t.alerta_id %}{% url 'monitoreo:detalle_alerta' t.alerta_id %}{% else %}{% url 'monitoreo:detalle_estacion' t.codigo %}{% endif %}"
            data-estado="{{ t.estado }}"
+           {% if t.estado == "critica" and t.alerta_id %}data-critica="{{ t.alerta_id }}"{% endif %}
            data-texto="{{ t.codigo|lower }} {{ t.paciente|default:''|lower }}">
           <h3>{{ t.codigo }}</h3>
           <p class="estado">{{ t.simbolo }} {{ t.etiqueta }}</p>
