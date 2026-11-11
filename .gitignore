@@ -18,3 +18,6 @@ media/
 .vscode/
 .DS_Store
 Thumbs.db
+
+*.pt
+vision/.venv/

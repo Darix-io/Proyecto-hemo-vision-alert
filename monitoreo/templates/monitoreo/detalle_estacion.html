@@ -12,6 +12,12 @@
   <tr><th>Última señal</th><td>{% if estacion.ultima_senal %}{{ estacion.ultima_senal|date:"d/m/Y H:i:s" }}{% else %}Sin señal registrada{% endif %}</td></tr>
 </table>
 
+
+{% if estacion.codigo == camara_estacion %}
+<h2>Cámara en vivo</h2>
+{% include "monitoreo/_camara.html" %}
+{% endif %}
+
 <h2>Alertas de la sesión</h2>
 {% if alertas %}
 <table>
