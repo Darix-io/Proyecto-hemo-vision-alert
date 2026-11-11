@@ -32,7 +32,11 @@
 
   <section>
     <h2>Evidencia visual {{ evento.camara }}</h2>
-    <div class="evidencia">Evidencia visual (imagen simulada)</div>
+      {% if alerta.sesion.estacion.codigo == camara_estacion %}
+        {% include "monitoreo/_camara.html" %}
+      {% else %}
+        <div class="evidencia">Evidencia visual (imagen simulada)</div>
+      {% endif %}
   </section>
 </div>
 

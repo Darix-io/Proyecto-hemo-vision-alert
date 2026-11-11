@@ -29,6 +29,11 @@
 
 <div id="tablero">{% include "monitoreo/_tablero.html" %}</div>
 
+<section class="ficha camara-panel">
+  <h2>Cámara en vivo · {{ camara_estacion }}</h2>
+  {% include "monitoreo/_camara.html" %}
+</section>
+
 <script>
 (function () {
   var url = "{% url 'monitoreo:dashboard' %}?parcial=1";
