@@ -5,14 +5,49 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 from .forms import PacienteForm, SesionForm
 from .models import Paciente, Sesion
-
+from monitoreo.servicios import construir_tablero
+from django.core.paginator import Paginator
 
 
 @login_required
 def listar_pacientes(request):
+    q = request.GET.get("q", "").strip()
+    sala = request.GET.get("sala", "")
+    estado = request.GET.get("estado", "")
     pacientes = Paciente.objects.order_by("codigo")
-    return render(request, "pacientes/lista.html", {"pacientes": pacientes})
-
+    if q:
+        pacientes = pacientes.filter(codigo__icontains=q)
+    tablero = construir_tablero()
+    por_codigo = {}
+    for s in tablero["salas"]:
+        for t in s["tarjetas"]:
+            if t["paciente"]:
+                por_codigo[t["paciente"]] = t
+    filas = [{"codigo": p.codigo, "tarjeta": por_codigo.get(p.codigo)} for p in pacientes]
+    if sala:
+        filas = [f for f in filas if f["tarjeta"] and f["tarjeta"]["sala"] == sala]
+    if estado == "sin_sesion":
+        filas = [f for f in filas if not f["tarjeta"]]
+    elif estado:
+        filas = [f for f in filas if f["tarjeta"] and f["tarjeta"]["estado"] == estado]
+    pagina = Paginator(filas, 10).get_page(request.GET.get("pagina"))
+    parametros = request.GET.copy()
+    parametros.pop("pagina", None)
+    return render(
+        request,
+        "pacientes/lista.html",
+        {
+            "pacientes": pacientes,
+            "pagina": pagina,
+            "total": Paciente.objects.count(),
+            "q": q,
+            "sala": sala,
+            "estado": estado,
+            "salas": tablero["nombres_salas"],
+            "filtrado": bool(q or sala or estado),
+            "consulta": parametros.urlencode(),
+        },
+    )
 
 @login_required
 def registrar_paciente(request):

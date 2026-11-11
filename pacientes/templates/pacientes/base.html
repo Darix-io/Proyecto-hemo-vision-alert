@@ -19,6 +19,8 @@
            {% if request.resolver_match.view_name in 'pacientes:lista pacientes:registrar' %}class="activo" aria-current="page"{% endif %}>Pacientes</a>
         <a href="{% url 'pacientes:sesiones' %}"
            {% if request.resolver_match.url_name in 'sesiones sesion_iniciar' %}class="activo" aria-current="page"{% endif %}>Sesiones</a>
+        <a href="{% url 'historial:lista' %}"
+           {% if request.resolver_match.app_name == 'historial' %}class="activo" aria-current="page"{% endif %}>Historial</a>
       </nav>
       <div class="usuario">
         {{ user.get_username }}

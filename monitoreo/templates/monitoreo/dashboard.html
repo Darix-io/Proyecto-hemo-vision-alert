@@ -22,10 +22,16 @@
     </select>
   </label>
   <button type="button" id="actualizar">Actualizar ahora</button>
+  <button type="button" id="sonido" class="boton-claro">Activar sonido</button>
 </div>
 <p id="aviso" role="alert" hidden>
   El Dashboard dejó de actualizarse. Los datos mostrados pueden estar desactualizados.
 </p>
+
+<section class="ficha camara-panel">
+  <h2>Cámara en vivo · {{ camara_estacion }}</h2>
+  {% include "monitoreo/_camara.html" %}
+</section>
 
 <div id="tablero">{% include "monitoreo/_tablero.html" %}</div>
 
@@ -37,7 +43,40 @@
   var buscar = document.getElementById("buscar");
   var fEstado = document.getElementById("f-estado");
   var fSala = document.getElementById("f-sala");
+  var botonSonido = document.getElementById("sonido");
   var ultimoExito = Date.now();
+  var audio = null;
+  var sonidoActivo = false;
+  var vistas = new Set();
+
+  function pitar() {
+    if (!sonidoActivo || !audio) { return; }
+    var t = audio.currentTime;
+    [0, 0.35, 0.7].forEach(function (d) {
+      var o = audio.createOscillator();
+      var g = audio.createGain();
+      o.type = "square";
+      o.frequency.value = 880;
+      g.gain.setValueAtTime(0.15, t + d);
+      g.gain.setValueAtTime(0, t + d + 0.2);
+      o.connect(g);
+      g.connect(audio.destination);
+      o.start(t + d);
+      o.stop(t + d + 0.25);
+    });
+  }
+
+  function revisarCriticas(primera) {
+    var nueva = false;
+    tablero.querySelectorAll("[data-critica]").forEach(function (t) {
+      var id = t.dataset.critica;
+      if (!vistas.has(id)) {
+        vistas.add(id);
+        if (!primera) { nueva = true; }
+      }
+    });
+    if (nueva) { pitar(); }
+  }
 
   function filtrar() {
     var texto = buscar.value.trim().toLowerCase();
@@ -65,13 +104,23 @@
         tablero.innerHTML = html;
         ultimoExito = Date.now();
         filtrar();
+        revisarCriticas(false);
       })
       .catch(function () {});
   }
 
+  botonSonido.addEventListener("click", function () {
+    if (!audio) { audio = new (window.AudioContext || window.webkitAudioContext)(); }
+    if (audio.state === "suspended") { audio.resume(); }
+    sonidoActivo = !sonidoActivo;
+    botonSonido.textContent = sonidoActivo ? "Sonido activado" : "Activar sonido";
+    if (sonidoActivo) { pitar(); }
+  });
+
   [buscar, fEstado, fSala].forEach(function (el) {
     el.addEventListener("input", filtrar);
   });
+  revisarCriticas(true);
   setInterval(actualizar, 3000);
   setInterval(function () {
     aviso.hidden = (Date.now() - ultimoExito) <= 10000;

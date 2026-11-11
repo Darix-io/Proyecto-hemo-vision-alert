@@ -3,6 +3,9 @@
 {% block encabezado %}Estación {{ alerta.sesion.estacion.codigo }} · Detalle de suceso{% endblock %}
 
 {% block contenido %}
+
+<p class="migas"><a href="{% url 'monitoreo:dashboard' %}">Dashboard</a> › {{ alerta.sesion.estacion.codigo }} · <strong>{{ alerta.get_estado_display }}</strong>
+</p>
 <p>
   <a class="boton boton-claro" href="{% url 'monitoreo:dashboard' %}">← Volver al Dashboard</a>
   <a class="boton boton-claro" href="{% url 'monitoreo:detalle_estacion' alerta.sesion.estacion.codigo %}">Ver estación</a>
@@ -29,7 +32,11 @@
 
   <section>
     <h2>Evidencia visual {{ evento.camara }}</h2>
-    <div class="evidencia">Evidencia visual (imagen simulada)</div>
+      {% if alerta.sesion.estacion.codigo == camara_estacion %}
+        {% include "monitoreo/_camara.html" %}
+      {% else %}
+        <div class="evidencia">Evidencia visual (imagen simulada)</div>
+      {% endif %}
   </section>
 </div>
 

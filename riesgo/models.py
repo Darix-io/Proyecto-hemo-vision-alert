@@ -5,6 +5,8 @@ from django.db import models
 
 class ClaseEvento(models.TextChoices):
     HEMORRAGIA = "hemorragia", "Posible hemorragia"
+    POSIBLE_MAREO = "posible_mareo", "Posible mareo"
+    MOVIMIENTO_BRUSCO = "movimiento_brusco", "Movimiento brusco"
 
 
 class ReglaRiesgo(models.Model):

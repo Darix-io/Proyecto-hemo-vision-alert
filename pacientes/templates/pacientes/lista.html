@@ -1,23 +1,65 @@
 {% extends "pacientes/base.html" %}
 
 {% block titulo %}Pacientes | HemoVision Alert{% endblock %}
+{% block encabezado %}Gestión de pacientes{% endblock %}
 
 {% block contenido %}
-  <h1>Pacientes</h1>
-  <p><a href="{% url 'pacientes:registrar' %}">Registrar paciente</a></p>
-    <p><a href="{% url 'pacientes:sesiones' %}">Sesiones de diálisis</a></p>
+  <div class="filtros">
+    <form method="get" class="filtros">
+      <input type="search" name="q" value="{{ q }}" placeholder="Buscar por código…" aria-label="Buscar paciente">
+      <label>Sala
+        <select name="sala">
+          <option value="">Todas</option>
+          {% for s in salas %}<option value="{{ s }}" {% if s == sala %}selected{% endif %}>{{ s }}</option>{% endfor %}
+        </select>
+      </label>
+      <label>Estado
+        <select name="estado">
+          <option value="">Todos</option>
+          <option value="critica" {% if estado == "critica" %}selected{% endif %}>Crítica</option>
+          <option value="atencion" {% if estado == "atencion" %}selected{% endif %}>En atención</option>
+          <option value="normal" {% if estado == "normal" %}selected{% endif %}>Normal</option>
+          <option value="sin_senal" {% if estado == "sin_senal" %}selected{% endif %}>Sin señal</option>
+          <option value="sin_sesion" {% if estado == "sin_sesion" %}selected{% endif %}>Sin sesión</option>
+        </select>
+      </label>
+      <button type="submit" class="boton-claro">Filtrar</button>
+      <a class="boton boton-claro" href="{% url 'pacientes:lista' %}">Limpiar</a>
+    </form>
+    <a class="boton" href="{% url 'pacientes:registrar' %}">+ Registrar paciente</a>
+    <a class="boton boton-claro" href="{% url 'pacientes:sesiones' %}">Sesiones de diálisis</a>
+  </div>
 
-  {% if pacientes %}
+  {% if pagina.object_list %}
     <table>
       <thead>
-        <tr><th>Código</th></tr>
+        <tr><th>Código</th><th>Estación</th><th>Estado actual</th></tr>
       </thead>
       <tbody>
-        {% for paciente in pacientes %}
-          <tr><td>{{ paciente.codigo }}</td></tr>
+        {% for fila in pagina %}
+          <tr>
+            <td>{{ fila.codigo }}</td>
+            {% if fila.tarjeta %}
+              <td><a href="{% url 'monitoreo:detalle_estacion' fila.tarjeta.codigo %}">{{ fila.tarjeta.codigo }}</a></td>
+              <td><span class="chip {{ fila.tarjeta.estado }}">{{ fila.tarjeta.simbolo }} {{ fila.tarjeta.etiqueta }}</span></td>
+            {% else %}
+              <td>—</td>
+              <td>Sin sesión</td>
+            {% endif %}
+          </tr>
         {% endfor %}
       </tbody>
     </table>
+    <p class="nota">Mostrando {{ pagina.object_list|length }} de {{ pagina.paginator.count }} pacientes{% if filtrado %} (filtrados){% endif %} · {{ total }} registrados</p>
+    {% if pagina.paginator.num_pages > 1 %}
+      <p>
+        {% if pagina.has_previous %}<a class="boton boton-claro" href="?{% if consulta %}{{ consulta }}&{% endif %}pagina={{ pagina.previous_page_number }}">Anterior</a>{% endif %}
+        Página {{ pagina.number }} de {{ pagina.paginator.num_pages }}
+        {% if pagina.has_next %}<a class="boton boton-claro" href="?{% if consulta %}{{ consulta }}&{% endif %}pagina={{ pagina.next_page_number }}">Siguiente</a>{% endif %}
+      </p>
+    {% endif %}
+  {% elif filtrado %}
+    <p>Sin resultados para los filtros aplicados{% if q %} ("{{ q }}"){% endif %}.</p>
   {% else %}
     <p>Todavía no hay pacientes registrados.</p>
   {% endif %}

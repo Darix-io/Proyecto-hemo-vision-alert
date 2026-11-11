@@ -187,3 +187,23 @@ a.tarjeta:hover { box-shadow: 0 2px 8px rgba(0,0,0,.18); }
 .aviso-clinico { border: 1px dashed var(--gris); border-radius: 8px; padding: 8px 12px; font-size: .85rem; color: var(--gris); }
 textarea { width: 100%; min-height: 80px; }
 @media (max-width: 700px) { .dos-columnas { grid-template-columns: 1fr; } }
+
+.chip { display: inline-block; border: 1px solid var(--borde); border-radius: 12px; padding: 2px 10px; font-size: .85rem; font-weight: 700; }
+.chip.critica { color: var(--rojo); }
+.chip.atencion { color: var(--ambar); }
+.chip.normal { color: var(--verde); }
+.formulario { max-width: 520px; }
+.formulario input { width: 100%; }
+.login-pagina { display: grid; grid-template-columns: 1fr 1fr; min-height: 100vh; }
+.login-panel { background: var(--turquesa); color: #fff; padding: 48px; display: flex; flex-direction: column; justify-content: center; }
+.login-panel h2 { font-size: 1.8rem; }
+.marca-login { font-size: 1.2rem; font-weight: 700; }
+.login-caja { background: #fff; padding: 48px; display: flex; flex-direction: column; justify-content: center; max-width: 480px; width: 100%; margin: 0 auto; }
+.login-caja input { width: 100%; }
+.login-caja button.ancho { width: 100%; }
+.nota { font-size: .8rem; color: var(--gris); }
+@media (max-width: 700px) { .login-pagina { grid-template-columns: 1fr; } .login-panel, .login-caja { padding: 24px; } }
+.migas { font-size: .85rem; color: var(--gris); margin: 0 0 8px; }
+.video-caja img { width: 100%; max-width: 640px; border-radius: 10px; background: #000; display: block; }
+.camara-panel .video-caja img { max-width: 420px; }
+.video-error { color: var(--gris); border: 1px dashed var(--gris); border-radius: 8px; padding: 12px; }

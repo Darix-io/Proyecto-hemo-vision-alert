@@ -66,6 +66,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'monitoreo.contexto.camara',
             ],
         },
     },
@@ -134,3 +135,12 @@ MAILERS = {
 LOGIN_URL = 'seguridad:login'
 LOGIN_REDIRECT_URL = 'pacientes:lista'
 LOGOUT_REDIRECT_URL = 'seguridad:login'
+
+import os
+
+# Clave compartida con el servicio de visión (variable de entorno VISION_TOKEN).
+VISION_TOKEN = os.environ.get("VISION_TOKEN", "")
+
+# Video en vivo del servicio de visión (solo en este equipo).
+VISION_STREAM_URL = os.environ.get("VISION_STREAM_URL", "http://127.0.0.1:8001/video")
+VISION_STREAM_ESTACION = os.environ.get("VISION_ESTACION", "EST-07")

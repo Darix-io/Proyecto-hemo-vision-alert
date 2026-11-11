@@ -1,0 +1,50 @@
+{% extends "pacientes/base.html" %}
+{% block titulo %}Historial · HemoVision Alert{% endblock %}
+{% block encabezado %}Historial de revisiones{% endblock %}
+
+{% block contenido %}
+<form method="get" class="filtros">
+  <input type="search" name="q" value="{{ q }}" placeholder="Buscar por paciente…" aria-label="Buscar paciente">
+  <label>Decisión
+    <select name="decision">
+      <option value="">Todas</option>
+      {% for valor, texto in decisiones %}
+        <option value="{{ valor }}" {% if valor == decision %}selected{% endif %}>{{ texto }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Estación
+    <select name="estacion">
+      <option value="">Todas</option>
+      {% for e in estaciones %}
+        <option value="{{ e.codigo }}" {% if e.codigo == estacion %}selected{% endif %}>{{ e.codigo }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <button type="submit">Filtrar</button>
+  <a class="boton boton-claro" href="{% url 'historial:lista' %}">Limpiar</a>
+</form>
+
+{% if revisiones %}
+<table>
+  <thead>
+    <tr><th>Fecha</th><th>Estación</th><th>Paciente</th><th>Decisión</th><th>Revisor</th><th>Observación</th><th></th></tr>
+  </thead>
+  <tbody>
+    {% for r in revisiones %}
+    <tr>
+      <td>{{ r.creada|date:"d/m/Y H:i" }}</td>
+      <td>{{ r.alerta.sesion.estacion.codigo }}</td>
+      <td>{{ r.alerta.sesion.paciente.codigo }}</td>
+      <td>{{ r.get_decision_display }}</td>
+      <td>{{ r.revisor.get_username }}</td>
+      <td>{{ r.observacion|default:"—" }}</td>
+      <td><a href="{% url 'monitoreo:detalle_alerta' r.alerta.pk %}">Ver alerta</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>Todavía no hay revisiones registradas.</p>
+{% endif %}
+{% endblock %}
