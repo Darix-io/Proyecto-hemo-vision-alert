@@ -3,13 +3,14 @@ import math
 from collections import deque
 from statistics import median
 
-NARIZ, HOMBRO_I, HOMBRO_D, MUNECA_I, MUNECA_D = 0, 5, 6, 9, 10
+CABEZA = (0, 1, 2, 3, 4)  # nariz, ojos, orejas
+HOMBRO_I, HOMBRO_D, MUNECA_I, MUNECA_D = 5, 6, 9, 10
 MAREO = "posible_mareo"
 MOVIMIENTO = "movimiento_brusco"
 
 
 class Detector:
-    def __init__(self, calibracion=5.0, delta_caida=0.25, segundos_caida=2.0,
+    def __init__(self, calibracion=5.0, delta_caida=0.20, segundos_caida=1.5,
                  velocidad=6.0, segundos_movimiento=1.5, conf_min=0.5):
         self.calibracion = calibracion
         self.delta_caida = delta_caida
@@ -29,6 +30,7 @@ class Detector:
         self._desde_caida = None
         self._previo = None
         self._ventana = deque()
+        self._recientes = deque(maxlen=5)
         self.caida = None
         self.velocidad_actual = None
         self.confianza = 0.0
@@ -40,6 +42,10 @@ class Detector:
     def _ok(self, conf, *indices):
         return all(conf[i] >= self.conf_min for i in indices)
 
+    def _cabeza_y(self, xy, conf):
+        ys = [xy[i][1] for i in CABEZA if conf[i] >= self.conf_min]
+        return sum(ys) / len(ys) if ys else None
+
     def actualizar(self, t, xy, conf):
         """Devuelve el conjunto de eventos activos en este instante."""
         activos = set()
@@ -49,29 +55,43 @@ class Detector:
             if ancho < 1e-6:
                 ancho = None
 
-        # Cabeza caída: cambio respecto a la postura calibrada.
-        if ancho is not None and self._ok(conf, NARIZ):
+        if ancho is None:
+            self.caida = None
+            self._desde_caida = None
+            self._recientes.clear()
+        else:
             hombros_y = (xy[HOMBRO_I][1] + xy[HOMBRO_D][1]) / 2
-            self.caida = (xy[NARIZ][1] - hombros_y) / ancho
-            self.confianza = (
-                conf[NARIZ] + conf[HOMBRO_I] + conf[HOMBRO_D]
-            ) / 3
-            if self.base is None:
-                if self._inicio is None:
-                    self._inicio = t
-                self._muestras.append(self.caida)
-                if t - self._inicio >= self.calibracion and len(self._muestras) >= 5:
-                    self.base = median(self._muestras)
-            elif self.caida - self.base > self.delta_caida:
+            cabeza_y = self._cabeza_y(xy, conf)
+            exceso = False
+            if cabeza_y is not None:
+                self.caida = (cabeza_y - hombros_y) / ancho
+                self._recientes.append(self.caida)
+                suave = median(self._recientes)
+                visibles = [conf[i] for i in CABEZA if conf[i] >= self.conf_min]
+                self.confianza = (
+                    conf[HOMBRO_I] + conf[HOMBRO_D] + sum(visibles) / len(visibles)
+                ) / 3
+                if self.base is None:
+                    if self._inicio is None:
+                        self._inicio = t
+                    self._muestras.append(self.caida)
+                    if t - self._inicio >= self.calibracion and len(self._muestras) >= 5:
+                        self.base = median(self._muestras)
+                else:
+                    exceso = suave - self.base > self.delta_caida
+            elif self.base is not None:
+                # La cabeza desapareció con los hombros visibles: cabeza caída.
+                self.caida = self.base + 2 * self.delta_caida
+                self.confianza = (conf[HOMBRO_I] + conf[HOMBRO_D]) / 2
+                exceso = True
+
+            if exceso:
                 if self._desde_caida is None:
                     self._desde_caida = t
                 if t - self._desde_caida >= self.segundos_caida:
                     activos.add(MAREO)
             else:
                 self._desde_caida = None
-        else:
-            self.caida = None
-            self._desde_caida = None
 
         # Movimiento brusco: velocidad de muñecas en anchos de hombros por segundo.
         if ancho is not None and self._ok(conf, MUNECA_I, MUNECA_D):

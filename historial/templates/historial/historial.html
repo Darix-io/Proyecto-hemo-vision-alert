@@ -1,8 +1,27 @@
 {% extends "pacientes/base.html" %}
 {% block titulo %}Historial · HemoVision Alert{% endblock %}
-{% block encabezado %}Historial de revisiones{% endblock %}
+{% block encabezado %}Historial e informe de alertas{% endblock %}
 
 {% block contenido %}
+<style>
+  @media print {
+    .menu, .barra, .filtros, .gestion, form button, .boton { display: none !important; }
+    body { background: #fff; }
+  }
+  .gestion { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 16px 0; }
+  .gestion form { margin: 0; }
+  .peligro { background: var(--rojo); }
+  .peligro:hover { background: #8e1d1d; }
+</style>
+
+<ul class="contadores">
+  <li class="ind-activas">Alertas totales <strong>{{ resumen.alertas }}</strong></li>
+  <li class="ind-normal">✓ Confirmadas <strong>{{ resumen.confirmadas }}</strong></li>
+  <li class="ind-sin">○ Descartadas <strong>{{ resumen.descartadas }}</strong></li>
+  <li class="ind-atencion">● Observaciones <strong>{{ resumen.observaciones }}</strong></li>
+  <li class="ind-critica">▲ Pendientes <strong>{{ resumen.pendientes }}</strong></li>
+</ul>
+
 <form method="get" class="filtros">
   <input type="search" name="q" value="{{ q }}" placeholder="Buscar por paciente…" aria-label="Buscar paciente">
   <label>Decisión
@@ -23,12 +42,15 @@
   </label>
   <button type="submit">Filtrar</button>
   <a class="boton boton-claro" href="{% url 'historial:lista' %}">Limpiar</a>
+  <a class="boton boton-claro" href="{% url 'historial:informe' %}?{{ consulta }}">Descargar informe (CSV)</a>
+  <button type="button" class="boton-claro" onclick="window.print()">Imprimir informe</button>
 </form>
 
+<h2>Alertas revisadas</h2>
 {% if revisiones %}
 <table>
   <thead>
-    <tr><th>Fecha</th><th>Estación</th><th>Paciente</th><th>Decisión</th><th>Revisor</th><th>Observación</th><th></th></tr>
+    <tr><th>Fecha</th><th>Estación</th><th>Paciente</th><th>Evento</th><th>Decisión</th><th>Revisor</th><th>Observación</th><th></th></tr>
   </thead>
   <tbody>
     {% for r in revisiones %}
@@ -36,10 +58,17 @@
       <td>{{ r.creada|date:"d/m/Y H:i" }}</td>
       <td>{{ r.alerta.sesion.estacion.codigo }}</td>
       <td>{{ r.alerta.sesion.paciente.codigo }}</td>
+      <td>{{ r.alerta.get_clase_evento_display }}</td>
       <td>{{ r.get_decision_display }}</td>
       <td>{{ r.revisor.get_username }}</td>
       <td>{{ r.observacion|default:"—" }}</td>
-      <td><a href="{% url 'monitoreo:detalle_alerta' r.alerta.pk %}">Ver alerta</a></td>
+      <td>
+        <a href="{% url 'monitoreo:detalle_alerta' r.alerta.pk %}">Ver</a>
+        <form method="post" action="{% url 'historial:eliminar' r.alerta.pk %}" style="display:inline"
+              onsubmit="return confirm('¿Eliminar esta alerta y todo su historial? No se puede deshacer.');">
+          {% csrf_token %}<button type="submit" class="boton-claro">Eliminar</button>
+        </form>
+      </td>
     </tr>
     {% endfor %}
   </tbody>
@@ -47,4 +76,50 @@
 {% else %}
 <p>Todavía no hay revisiones registradas.</p>
 {% endif %}
+
+<h2>Alertas pendientes de revisión</h2>
+{% if pendientes %}
+<table>
+  <thead><tr><th>Fecha</th><th>Estación</th><th>Paciente</th><th>Evento</th><th>Estado</th><th></th></tr></thead>
+  <tbody>
+    {% for a in pendientes %}
+    <tr>
+      <td>{{ a.creada|date:"d/m/Y H:i" }}</td>
+      <td>{{ a.sesion.estacion.codigo }}</td>
+      <td>{{ a.sesion.paciente.codigo }}</td>
+      <td>{{ a.get_clase_evento_display }}</td>
+      <td>{{ a.get_estado_display }}</td>
+      <td>
+        <a href="{% url 'monitoreo:detalle_alerta' a.pk %}">Revisar</a>
+        <form method="post" action="{% url 'historial:eliminar' a.pk %}" style="display:inline"
+              onsubmit="return confirm('¿Eliminar esta alerta? No se puede deshacer.');">
+          {% csrf_token %}<button type="submit" class="boton-claro">Eliminar</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>No hay alertas pendientes.</p>
+{% endif %}
+
+<div class="gestion">
+  <strong>Limpieza:</strong>
+  <form method="post" action="{% url 'historial:vaciar' %}"
+        onsubmit="return confirm('¿Eliminar todas las alertas revisadas? No se puede deshacer.');">
+    {% csrf_token %}<input type="hidden" name="alcance" value="revisadas">
+    <button type="submit" class="boton-claro">Vaciar historial revisado</button>
+  </form>
+  <form method="post" action="{% url 'historial:vaciar' %}"
+        onsubmit="return confirm('¿Eliminar todas las alertas pendientes? No se puede deshacer.');">
+    {% csrf_token %}<input type="hidden" name="alcance" value="pendientes">
+    <button type="submit" class="boton-claro">Eliminar pendientes</button>
+  </form>
+  <form method="post" action="{% url 'historial:vaciar' %}"
+        onsubmit="return confirm('¿Eliminar TODAS las alertas y su historial? No se puede deshacer.');">
+    {% csrf_token %}<input type="hidden" name="alcance" value="todo">
+    <button type="submit" class="peligro">Eliminar todo</button>
+  </form>
+</div>
 {% endblock %}

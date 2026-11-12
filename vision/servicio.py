@@ -11,24 +11,23 @@ import requests
 from ultralytics import YOLO
 
 from pose import MAREO, MOVIMIENTO, Detector
-from sangre import DetectorSangre, fraccion_roja, zonas
+from sangre import DetectorSangre, fraccion_roja, resaltar, zonas
 
 API = os.environ.get("VISION_API", "http://127.0.0.1:8000/api/vision")
 TOKEN = os.environ.get("VISION_TOKEN", "")
-ESTACION = os.environ.get("VISION_ESTACION", "EST-07")
-CAMARA_ID = os.environ.get("VISION_CAMARA_ID", "CAM-07")
+ESTACION = os.environ.get("VISION_ESTACION", "EST-07").strip().upper()
+CAMARA_ID = os.environ.get("VISION_CAMARA_ID", "CAM-" + ESTACION.split("-")[-1])
 INDICE_CAMARA = int(os.environ.get("VISION_INDICE", "0"))
-CADA_N_CUADROS = int(os.environ.get("VISION_CADA_N", "3"))
+CADA_N_CUADROS = int(os.environ.get("VISION_CADA_N", "2"))
 PUERTO_VIDEO = int(os.environ.get("VISION_PUERTO", "8001"))
-DELTA_CAIDA = float(os.environ.get("VISION_DELTA_CAIDA", "0.25"))
-VELOCIDAD = float(os.environ.get("VISION_VELOCIDAD", "6.0"))
-SIMULAR_HEMORRAGIA = os.environ.get("VISION_SIMULAR_HEMORRAGIA", "0") == "1"
-UMBRAL_SIMULACION = float(os.environ.get("VISION_UMBRAL", "0.60"))
+DELTA_CAIDA = float(os.environ.get("VISION_DELTA_CAIDA", "0.18"))
+VELOCIDAD = float(os.environ.get("VISION_VELOCIDAD", "5.0"))
 DETECTAR_ROJO = os.environ.get("VISION_ROJO", "1") == "1"
-DELTA_ROJO = float(os.environ.get("VISION_DELTA_ROJO", "0.06"))
+DELTA_ROJO = float(os.environ.get("VISION_DELTA_ROJO", "0.03"))
 SEGUNDOS_LATIDO = 3
-SEGUNDOS_ENTRE_EVENTOS = 10
-NOMBRES = {MAREO: "POSIBLE MAREO", MOVIMIENTO: "MOVIMIENTO BRUSCO", "hemorragia": "SIMULACION"}
+SEGUNDOS_ENTRE_EVENTOS = 8
+NOMBRES = {MAREO: "POSIBLE MAREO", MOVIMIENTO: "MOVIMIENTO BRUSCO",
+           "hemorragia": "POSIBLE HEMORRAGIA (rojo)"}
 CABECERAS = {"X-Vision-Token": TOKEN}
 
 _candado = threading.Lock()
@@ -104,19 +103,23 @@ def persona_principal(resultado):
     return max(areas)[1]
 
 
-def rotular(vista, detector, recientes, ahora):
+def rotular(vista, detector, sangre, recientes, ahora):
     alto = vista.shape[0]
     cv2.putText(vista, f"{ESTACION} / {CAMARA_ID}", (8, 20),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
     if not detector.calibrado:
         texto = "Calibrando... quede quieto"
     elif detector.caida is None:
-        texto = "Postura no medible (hombros o cabeza ocultos)"
+        texto = "Postura no medible (hombros ocultos)"
     else:
         vel = detector.velocidad_actual or 0.0
         texto = f"caida {detector.caida - detector.base:+.2f} | vel {vel:.1f}"
     cv2.putText(vista, texto, (8, alto - 10),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 255, 0), 2)
+    if DETECTAR_ROJO and sangre.fraccion is not None:
+        estado = f"base {sangre.base*100:.1f}%" if sangre.calibrado else "calibrando"
+        cv2.putText(vista, f"rojo {sangre.fraccion*100:.1f}% ({estado})", (8, alto - 32),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 0, 255), 2)
     y = 46
     for clase, cuando in recientes.items():
         if ahora - cuando < 5:
@@ -138,7 +141,7 @@ def main():
 
     iniciar_servidor_de_video()
     print(f"Servicio activo: {ESTACION} / {CAMARA_ID}. Ctrl + C para detener.")
-    print("Calibrando 5 segundos: el paciente debe quedarse quieto.")
+    print("Calibrando 5 segundos: quede quieto y sin el objeto rojo en cuadro.")
     cuadro_n = 0
     ultimo = None
     ultimo_latido = 0.0
@@ -157,7 +160,7 @@ def main():
                 _recalibrar.clear()
                 detector.reiniciar_calibracion()
                 sangre.reiniciar()
-                print("Recalibrando: el paciente debe quedarse quieto 5 segundos.")
+                print("Recalibrando: quede quieto 5 segundos, sin el objeto rojo.")
             if ahora - ultimo_latido >= SEGUNDOS_LATIDO:
                 codigo, _ = enviar("senal", {"estacion": ESTACION})
                 if codigo not in (None, 200):
@@ -183,16 +186,11 @@ def main():
                         frac = fraccion_roja(cuadro, rects_sangre) if rects_sangre else None
                         if sangre.actualizar(ahora, frac):
                             activos.add("hemorragia")
-                    if SIMULAR_HEMORRAGIA and float(ultimo.boxes.conf[i]) >= UMBRAL_SIMULACION:
-                        activos.add("hemorragia")
                 for clase in activos:
                     recientes[clase] = ahora
                     if ahora - ultimo_evento.get(clase, 0.0) < SEGUNDOS_ENTRE_EVENTOS:
                         continue
-                    valor = (
-                        float(ultimo.boxes.conf[i]) if clase == "hemorragia"
-                        else detector.confianza
-                    )
+                    valor = 0.95 if clase == "hemorragia" else detector.confianza
                     codigo, cuerpo = enviar("evento", {
                         "identificador": str(uuid.uuid4()),
                         "estacion": ESTACION,
@@ -206,13 +204,11 @@ def main():
 
             if ahora - ultima_publicacion >= 0.1:
                 vista = ultimo.plot(img=cuadro.copy()) if ultimo is not None else cuadro.copy()
-                for x1, y1, x2, y2 in rects_sangre:
-                    cv2.rectangle(vista, (x1, y1), (x2, y2), (0, 0, 255), 1)
-                if DETECTAR_ROJO and sangre.fraccion is not None:
-                    est = f"base {sangre.base*100:.1f}%" if sangre.calibrado else "calibrando"
-                    cv2.putText(vista, f"rojo {sangre.fraccion*100:.1f}% ({est})",
-                                (8, vista.shape[0] - 32), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 0, 255), 2)
-                rotular(vista, detector, recientes, ahora)
+                if DETECTAR_ROJO and rects_sangre:
+                    resaltar(vista, rects_sangre)
+                    for x1, y1, x2, y2 in rects_sangre:
+                        cv2.rectangle(vista, (x1, y1), (x2, y2), (0, 0, 255), 1)
+                rotular(vista, detector, sangre, recientes, ahora)
                 publicar(vista)
                 ultima_publicacion = ahora
     except KeyboardInterrupt:
