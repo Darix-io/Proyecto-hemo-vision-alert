@@ -1,4 +1,5 @@
 """Servicio de visión: webcam + YOLO pose -> API de HemoVision (Django) y video en vivo."""
+import base64
 import os
 import threading
 import time
@@ -20,6 +21,7 @@ CAMARA_ID = os.environ.get("VISION_CAMARA_ID", "CAM-" + ESTACION.split("-")[-1])
 INDICE_CAMARA = int(os.environ.get("VISION_INDICE", "0"))
 CADA_N_CUADROS = int(os.environ.get("VISION_CADA_N", "2"))
 PUERTO_VIDEO = int(os.environ.get("VISION_PUERTO", "8001"))
+FUENTE = os.environ.get("VISION_FUENTE", "").strip()
 DELTA_CAIDA = float(os.environ.get("VISION_DELTA_CAIDA", "0.18"))
 VELOCIDAD = float(os.environ.get("VISION_VELOCIDAD", "5.0"))
 DETECTAR_ROJO = os.environ.get("VISION_ROJO", "1") == "1"
@@ -128,11 +130,19 @@ def rotular(vista, detector, sangre, recientes, ahora):
             y += 26
 
 
+def captura_jpeg(vista):
+    ok, buffer = cv2.imencode(".jpg", vista, [cv2.IMWRITE_JPEG_QUALITY, 80])
+    return base64.b64encode(buffer.tobytes()).decode("ascii") if ok else ""
+
+
 def main():
     if not TOKEN:
         raise SystemExit("Falta la variable VISION_TOKEN (la misma que usa Django).")
     modelo = YOLO("yolov8n-pose.pt")
-    camara = cv2.VideoCapture(INDICE_CAMARA)
+    camara = (
+        cv2.VideoCapture(int(FUENTE) if FUENTE.isdigit() else FUENTE)
+        if FUENTE else cv2.VideoCapture(INDICE_CAMARA)
+    )
     if not camara.isOpened():
         raise SystemExit("No se pudo abrir la cámara. Pruebe VISION_INDICE=1.")
     detector = Detector(delta_caida=DELTA_CAIDA, velocidad=VELOCIDAD)
@@ -191,6 +201,13 @@ def main():
                     if ahora - ultimo_evento.get(clase, 0.0) < SEGUNDOS_ENTRE_EVENTOS:
                         continue
                     valor = 0.95 if clase == "hemorragia" else detector.confianza
+                    vista_evento = ultimo.plot(img=cuadro.copy())
+                    if DETECTAR_ROJO and rects_sangre:
+                        resaltar(vista_evento, rects_sangre)
+                    rotular(vista_evento, detector, sangre, recientes, ahora)
+                    cv2.putText(vista_evento, datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
+                                (vista_evento.shape[1] - 200, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+                    captura = captura_jpeg(vista_evento)
                     codigo, cuerpo = enviar("evento", {
                         "identificador": str(uuid.uuid4()),
                         "estacion": ESTACION,
@@ -198,6 +215,7 @@ def main():
                         "clase_evento": clase,
                         "valor": round(valor * 100, 2),
                         "hora_evento": datetime.now(timezone.utc).isoformat(),
+                        "captura": captura,
                     })
                     print(f"Evento {clase} -> {codigo} {cuerpo}")
                     ultimo_evento[clase] = ahora

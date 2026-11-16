@@ -53,6 +53,8 @@ def _borrar(alertas):
     ids = list(alertas.values_list("pk", flat=True))
     with transaction.atomic():
         Revision.objects.filter(alerta_id__in=ids).delete()
+        for evento in EventoVisual.objects.filter(alerta_id__in=ids):
+            evento.captura.delete(save=False)
         EventoVisual.objects.filter(alerta_id__in=ids).delete()
         Alerta.objects.filter(pk__in=ids).delete()
     return len(ids)

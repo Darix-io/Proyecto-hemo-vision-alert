@@ -94,6 +94,7 @@ def registrar_evento(
             hora_evento__gte=hora_evento - ventana,
             hora_evento__lte=hora_evento + ventana,
         )
+        .exclude(alerta__revisiones__decision__in=["confirmada", "descartada"])
         .exclude(pk=evento.pk)
         .select_related("alerta")
         .order_by("-hora_evento")

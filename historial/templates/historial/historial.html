@@ -63,7 +63,9 @@
       <td>{{ r.revisor.get_username }}</td>
       <td>{{ r.observacion|default:"—" }}</td>
       <td>
+        {% with c=r.alerta.evento_con_captura %}{% if c %}<a href="{{ c.captura.url }}" target="_blank"><img src="{{ c.captura.url }}" alt="Captura" style="height:36px;vertical-align:middle"></a> {% endif %}{% endwith %}
         <a href="{% url 'monitoreo:detalle_alerta' r.alerta.pk %}">Ver</a>
+        <a href="{% url 'monitoreo:informe_alerta' r.alerta.pk %}">Informe</a>
         <form method="post" action="{% url 'historial:eliminar' r.alerta.pk %}" style="display:inline"
               onsubmit="return confirm('¿Eliminar esta alerta y todo su historial? No se puede deshacer.');">
           {% csrf_token %}<button type="submit" class="boton-claro">Eliminar</button>
@@ -90,7 +92,9 @@
       <td>{{ a.get_clase_evento_display }}</td>
       <td>{{ a.get_estado_display }}</td>
       <td>
+        {% with c=a.evento_con_captura %}{% if c %}<a href="{{ c.captura.url }}" target="_blank"><img src="{{ c.captura.url }}" alt="Captura" style="height:36px;vertical-align:middle"></a> {% endif %}{% endwith %}
         <a href="{% url 'monitoreo:detalle_alerta' a.pk %}">Revisar</a>
+        <a href="{% url 'monitoreo:informe_alerta' a.pk %}">Informe</a>
         <form method="post" action="{% url 'historial:eliminar' a.pk %}" style="display:inline"
               onsubmit="return confirm('¿Eliminar esta alerta? No se puede deshacer.');">
           {% csrf_token %}<button type="submit" class="boton-claro">Eliminar</button>

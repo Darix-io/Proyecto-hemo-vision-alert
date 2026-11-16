@@ -207,3 +207,6 @@ textarea { width: 100%; min-height: 80px; }
 .video-caja img { width: 100%; max-width: 640px; border-radius: 10px; background: #000; display: block; }
 .camara-panel .video-caja img { max-width: 420px; }
 .video-error { color: var(--gris); border: 1px dashed var(--gris); border-radius: 8px; padding: 12px; }
+.camaras { display: flex; gap: 16px; flex-wrap: wrap; }
+.camaras figure { margin: 0; }
+.camaras figcaption { font-weight: 700; margin-bottom: 4px; }
