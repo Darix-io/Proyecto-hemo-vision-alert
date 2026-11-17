@@ -7,12 +7,12 @@ NARIZ, HOMBRO_I, HOMBRO_D, CADERA_I, CADERA_D = 0, 5, 6, 11, 12
 HEMORRAGIA = "hemorragia"
 
 
-def mascara_roja(bgr, r_min=45, razon=0.60, dif_min=30):
+def mascara_roja(bgr, r_min=60, razon=0.45, dif_min=50):
     """Rojo por proporción (verde bajo respecto al rojo). Acepta rojos vivos, oscuros, apagados y rosados."""
     b = bgr[..., 0].astype(np.int16)
     g = bgr[..., 1].astype(np.int16)
     r = bgr[..., 2].astype(np.int16)
-    ok = (r >= r_min) & (g <= r * razon) & ((r - g) >= dif_min) & (b <= r * 1.1)
+    ok = (r >= r_min) & (g <= r * razon) & ((r - g) >= dif_min) & (b <= r * 0.85)
     return ok.astype(np.uint8) * 255
 
 
