@@ -13,9 +13,9 @@
 </table>
 
 
-{% if estacion.codigo == camara_estacion %}
+{% if estacion.codigo in camaras_estaciones %}
 <h2>Cámara en vivo</h2>
-{% include "monitoreo/_camara.html" %}
+{% for c in camaras %}{% if c.estacion == estacion.codigo %}{% include "monitoreo/_camara.html" with url=c.url estacion=c.estacion %}{% endif %}{% endfor %}
 {% endif %}
 
 <h2>Alertas de la sesión</h2>

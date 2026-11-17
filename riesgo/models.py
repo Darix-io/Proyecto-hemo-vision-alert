@@ -57,6 +57,9 @@ class Alerta(models.Model):
     def __str__(self):
         return f"{self.clase_evento} {self.estado} (sesión {self.sesion_id})"
 
+    def evento_con_captura(self):
+        return self.eventos.exclude(captura="").order_by("hora_evento").first()
+
 
 class EventoVisual(models.Model):
     identificador = models.CharField(max_length=64, unique=True)
@@ -80,6 +83,7 @@ class EventoVisual(models.Model):
         on_delete=models.SET_NULL,
         related_name="eventos",
     )
+    captura = models.FileField(upload_to="capturas/%Y/%m/", blank=True)
 
     def __str__(self):
         return self.identificador

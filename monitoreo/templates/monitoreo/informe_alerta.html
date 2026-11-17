@@ -1,0 +1,57 @@
+{% extends "pacientes/base.html" %}
+{% block titulo %}Informe de evento · HemoVision Alert{% endblock %}
+{% block encabezado %}Informe de evento · Alerta {{ alerta.pk }}{% endblock %}
+
+{% block contenido %}
+<style>
+  @media print { .menu, .barra, .no-imprimir { display: none !important; } body { background: #fff; } }
+  .captura img { width: 100%; max-width: 560px; border-radius: 8px; border: 1px solid var(--borde); }
+</style>
+<p class="no-imprimir">
+  <a class="boton boton-claro" href="{% url 'monitoreo:detalle_alerta' alerta.pk %}">← Volver a la alerta</a>
+  <button type="button" onclick="window.print()">Imprimir o guardar como PDF</button>
+</p>
+
+<h2>Informe de evento</h2>
+<table>
+  <tr><th>Estación</th><td>{{ alerta.sesion.estacion.codigo }} ({{ alerta.sesion.estacion.sala|default:"Sin sala" }})</td></tr>
+  <tr><th>Paciente</th><td>{{ alerta.sesion.paciente.codigo }}</td></tr>
+  <tr><th>Evento detectado</th><td>{{ alerta.get_clase_evento_display }}</td></tr>
+  <tr><th>Prioridad</th><td>{{ alerta.get_estado_display }}</td></tr>
+  <tr><th>Alerta generada</th><td>{{ alerta.creada|date:"d/m/Y H:i:s" }}</td></tr>
+  <tr><th>Regla aplicada</th><td>{{ alerta.regla }} (umbral {{ alerta.regla.umbral }})</td></tr>
+</table>
+
+<h3>Eventos y capturas</h3>
+{% for e in eventos %}
+  <section class="ficha">
+    <p><strong>{{ e.hora_evento|date:"d/m/Y H:i:s" }}</strong> · Cámara {{ e.camara|default:"—" }} · Confianza {% if e.valor is not None %}{{ e.valor|floatformat:1 }}%{% else %}—{% endif %}</p>
+    {% if e.captura %}
+      <figure class="captura"><img src="{{ e.captura.url }}" alt="Captura del evento"><figcaption>Captura del evento</figcaption></figure>
+    {% else %}
+      <p>Sin captura.</p>
+    {% endif %}
+  </section>
+{% empty %}
+  <p>No hay eventos registrados.</p>
+{% endfor %}
+
+<h3>Revisiones</h3>
+{% if revisiones %}
+<table>
+  <tr><th>Fecha</th><th>Decisión</th><th>Revisor</th><th>Observación</th></tr>
+  {% for r in revisiones %}
+  <tr>
+    <td>{{ r.creada|date:"d/m/Y H:i" }}</td>
+    <td>{{ r.get_decision_display }}</td>
+    <td>{{ r.revisor.get_username }}</td>
+    <td>{{ r.observacion|default:"—" }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p>Pendiente de revisión.</p>
+{% endif %}
+
+<p class="aviso-clinico">Este aviso requiere revisión humana y no constituye un diagnóstico médico. Prototipo académico.</p>
+{% endblock %}

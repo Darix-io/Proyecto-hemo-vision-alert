@@ -108,3 +108,19 @@ def revision_resultado(request, pk):
             "cierra": revision.decision in DECISIONES_DE_CIERRE,
         },
     )
+
+
+@login_required
+def informe_alerta(request, pk):
+    alerta = get_object_or_404(
+        Alerta.objects.select_related("sesion__paciente", "sesion__estacion"), pk=pk
+    )
+    return render(
+        request,
+        "monitoreo/informe_alerta.html",
+        {
+            "alerta": alerta,
+            "eventos": alerta.eventos.order_by("hora_evento"),
+            "revisiones": alerta.revisiones.select_related("revisor").order_by("creada"),
+        },
+    )

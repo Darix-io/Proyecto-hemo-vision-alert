@@ -1,3 +1,5 @@
+import base64
+import binascii
 import json
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
@@ -6,6 +8,7 @@ import hmac
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.files.base import ContentFile
 from django.http import JsonResponse
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
@@ -35,6 +38,18 @@ def leer_json(request):
     except ValueError:
         return None
     return datos if isinstance(datos, dict) else None
+
+
+def guardar_captura(evento, texto):
+    """Guarda la captura (JPEG en base64). Si no es válida, se ignora."""
+    try:
+        crudo = base64.b64decode(texto, validate=True)
+    except (binascii.Error, ValueError, TypeError):
+        return False
+    if not crudo.startswith(b"\xff\xd8") or len(crudo) > 3_000_000:
+        return False
+    evento.captura.save(f"{evento.identificador}.jpg", ContentFile(crudo), save=True)
+    return True
 
 
 @csrf_exempt
@@ -86,6 +101,8 @@ def evento(request):
         )
     except ValidationError as error:
         return JsonResponse({"error": " ".join(error.messages)}, status=400)
+    if creado and datos.get("captura"):
+        guardar_captura(ev, str(datos["captura"]))
     return JsonResponse(
         {
             "ok": True,

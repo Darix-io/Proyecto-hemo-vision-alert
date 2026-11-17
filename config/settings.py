@@ -144,3 +144,10 @@ VISION_TOKEN = os.environ.get("VISION_TOKEN", "")
 # Video en vivo del servicio de visión (solo en este equipo).
 VISION_STREAM_URL = os.environ.get("VISION_STREAM_URL", "http://127.0.0.1:8001/video")
 VISION_STREAM_ESTACION = os.environ.get("VISION_ESTACION", "EST-07")
+
+# Cámaras conectadas: "EST-07=http://127.0.0.1:8001/video,EST-08=http://127.0.0.1:8002/video"
+VISION_CAMARAS = os.environ.get("VISION_CAMARAS", "")
+
+# Capturas de los eventos.
+MEDIA_URL = "media/"
+MEDIA_ROOT = BASE_DIR / "media"
