@@ -1,4 +1,9 @@
-"""Servicio de visión: webcam + YOLO pose -> API de HemoVision (Django) y video en vivo."""
+"""Servicio de visión: webcam + YOLO pose -> API de HemoVision (Django) y video en vivo.
+
+El video se lee en un hilo propio que solo conserva el cuadro más reciente, así el
+análisis nunca trabaja con cuadros viejos acumulados (atraso) aunque YOLO tarde más
+que la cámara en producir un cuadro.
+"""
 import base64
 import os
 import threading
@@ -12,22 +17,28 @@ import requests
 from ultralytics import YOLO
 
 from pose import MAREO, MOVIMIENTO, Detector
-from sangre import DetectorSangre, fraccion_roja, resaltar, zonas
+from sangre import DetectorSangre, resaltar, zonas
 
 API = os.environ.get("VISION_API", "http://127.0.0.1:8000/api/vision")
 TOKEN = os.environ.get("VISION_TOKEN", "")
 ESTACION = os.environ.get("VISION_ESTACION", "EST-07").strip().upper()
 CAMARA_ID = os.environ.get("VISION_CAMARA_ID", "CAM-" + ESTACION.split("-")[-1])
 INDICE_CAMARA = int(os.environ.get("VISION_INDICE", "0"))
-CADA_N_CUADROS = int(os.environ.get("VISION_CADA_N", "2"))
+ANALISIS_HZ = float(os.environ.get("VISION_ANALISIS_HZ", "8"))  # análisis máximos por segundo
+TAMANO_ANALISIS = int(os.environ.get("VISION_IMGSZ", "480"))     # 640 original, 320 más rápido
+DIAGNOSTICO = os.environ.get("VISION_DIAG", "0") == "1"
 PUERTO_VIDEO = int(os.environ.get("VISION_PUERTO", "8001"))
 FUENTE = os.environ.get("VISION_FUENTE", "").strip()
-DELTA_CAIDA = float(os.environ.get("VISION_DELTA_CAIDA", "0.18"))
-VELOCIDAD = float(os.environ.get("VISION_VELOCIDAD", "5.0"))
+DELTA_CAIDA = float(os.environ.get("VISION_DELTA_CAIDA", "0.12"))
+SEGUNDOS_CAIDA = float(os.environ.get("VISION_SEG_CAIDA", "0.6"))
+DELTA_LATERAL = float(os.environ.get("VISION_DELTA_LATERAL", "0.30"))  # 0 la desactiva
+VELOCIDAD = float(os.environ.get("VISION_VELOCIDAD", "3.5"))
+SEGUNDOS_MOVIMIENTO = float(os.environ.get("VISION_SEG_MOV", "0.8"))
 DETECTAR_ROJO = os.environ.get("VISION_ROJO", "1") == "1"
 DELTA_ROJO = float(os.environ.get("VISION_DELTA_ROJO", "0.03"))
 SEGUNDOS_LATIDO = 3
 SEGUNDOS_ENTRE_EVENTOS = 8
+INTERVALO_ANALISIS = 1.0 / max(ANALISIS_HZ, 0.5)
 NOMBRES = {MAREO: "POSIBLE MAREO", MOVIMIENTO: "MOVIMIENTO BRUSCO",
            "hemorragia": "POSIBLE HEMORRAGIA (rojo)"}
 CABECERAS = {"X-Vision-Token": TOKEN}
@@ -35,6 +46,42 @@ CABECERAS = {"X-Vision-Token": TOKEN}
 _candado = threading.Lock()
 _ultimo_jpeg = None
 _recalibrar = threading.Event()
+
+
+class Lector(threading.Thread):
+    """Lee la cámara en un hilo propio y guarda solo el cuadro más reciente."""
+
+    def __init__(self, camara):
+        super().__init__(daemon=True)
+        self.camara = camara
+        self._bloqueo = threading.Lock()
+        self._cuadro = None
+        self._numero = 0
+        self._hora = 0.0
+        self._activo = True
+
+    def run(self):
+        ultimo_aviso = 0.0
+        while self._activo:
+            ok, cuadro = self.camara.read()
+            if not ok:
+                ahora = time.time()
+                if ahora - ultimo_aviso >= 1.0:
+                    print("[aviso] no se pudo leer un fotograma.")
+                    ultimo_aviso = ahora
+                time.sleep(0.2)
+                continue
+            with self._bloqueo:
+                self._cuadro = cuadro
+                self._numero += 1
+                self._hora = time.time()
+
+    def ultimo(self):
+        with self._bloqueo:
+            return self._numero, self._cuadro, self._hora
+
+    def detener(self):
+        self._activo = False
 
 
 def publicar(cuadro):
@@ -94,6 +141,13 @@ def enviar(ruta, datos):
         return None, {}
 
 
+def enviar_latido():
+    """Se ejecuta en un hilo aparte para que un Django lento no frene el análisis."""
+    codigo, _ = enviar("senal", {"estacion": ESTACION})
+    if codigo not in (None, 200):
+        print(f"[aviso] latido rechazado ({codigo}).")
+
+
 def persona_principal(resultado):
     cajas = resultado.boxes
     if cajas is None or len(cajas) == 0 or resultado.keypoints is None:
@@ -115,7 +169,8 @@ def rotular(vista, detector, sangre, recientes, ahora):
         texto = "Postura no medible (hombros ocultos)"
     else:
         vel = detector.velocidad_actual or 0.0
-        texto = f"caida {detector.caida - detector.base:+.2f} | vel {vel:.1f}"
+        lado = (detector.lateral or 0.0) - (detector.base_lateral or 0.0)
+        texto = f"caida {detector.caida - detector.base:+.2f} | lado {lado:+.2f} | vel {vel:.1f}"
     cv2.putText(vista, texto, (8, alto - 10),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 255, 0), 2)
     if DETECTAR_ROJO and sangre.fraccion is not None:
@@ -145,26 +200,40 @@ def main():
     )
     if not camara.isOpened():
         raise SystemExit("No se pudo abrir la cámara. Pruebe VISION_INDICE=1.")
-    detector = Detector(delta_caida=DELTA_CAIDA, velocidad=VELOCIDAD)
+    try:
+        camara.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+    except Exception:  # noqa: BLE001 - no todos los controladores lo aceptan
+        pass
+    detector = Detector(
+        delta_caida=DELTA_CAIDA, segundos_caida=SEGUNDOS_CAIDA,
+        delta_lateral=DELTA_LATERAL, velocidad=VELOCIDAD,
+        segundos_movimiento=SEGUNDOS_MOVIMIENTO,
+    )
     sangre = DetectorSangre(delta=DELTA_ROJO)
     rects_sangre = []
 
     iniciar_servidor_de_video()
     print(f"Servicio activo: {ESTACION} / {CAMARA_ID}. Ctrl + C para detener.")
+    print(f"Análisis: hasta {ANALISIS_HZ:g} por segundo a tamaño {TAMANO_ANALISIS}.")
     print("Calibrando 5 segundos: quede quieto y sin el objeto rojo en cuadro.")
-    cuadro_n = 0
+    lector = Lector(camara)
+    lector.start()
+    ultimo_numero = 0
     ultimo = None
     ultimo_latido = 0.0
+    ultimo_analisis = 0.0
     ultimo_evento = {}
     recientes = {}
     ultima_publicacion = 0.0
+    ultimo_diag = time.time()
+    ms_yolo, edades = [], []
     try:
         while True:
-            ok, cuadro = camara.read()
-            if not ok:
-                print("[aviso] no se pudo leer un fotograma.")
-                time.sleep(1)
+            numero, cuadro, hora_cuadro = lector.ultimo()
+            if cuadro is None or numero == ultimo_numero:
+                time.sleep(0.005)
                 continue
+            ultimo_numero = numero
             ahora = time.time()
             if _recalibrar.is_set():
                 _recalibrar.clear()
@@ -172,14 +241,16 @@ def main():
                 sangre.reiniciar()
                 print("Recalibrando: quede quieto 5 segundos, sin el objeto rojo.")
             if ahora - ultimo_latido >= SEGUNDOS_LATIDO:
-                codigo, _ = enviar("senal", {"estacion": ESTACION})
-                if codigo not in (None, 200):
-                    print(f"[aviso] latido rechazado ({codigo}).")
+                threading.Thread(target=enviar_latido, daemon=True).start()
                 ultimo_latido = ahora
 
-            cuadro_n += 1
-            if cuadro_n % CADA_N_CUADROS == 0:
-                ultimo = modelo(cuadro, verbose=False)[0]
+            if ahora - ultimo_analisis >= INTERVALO_ANALISIS:
+                ultimo_analisis = ahora
+                ultimo = modelo(cuadro, imgsz=TAMANO_ANALISIS, verbose=False)[0]
+                if DIAGNOSTICO:
+                    fin = time.time()
+                    ms_yolo.append((fin - ahora) * 1000)
+                    edades.append((fin - hora_cuadro) * 1000)
                 i = persona_principal(ultimo)
                 activos = set()
                 if i is None:
@@ -193,7 +264,7 @@ def main():
                     activos = detector.actualizar(ahora, xy, conf)
                     if DETECTAR_ROJO:
                         rects_sangre = zonas(xy, conf, cuadro.shape)
-                        frac = fraccion_roja(cuadro, rects_sangre) if rects_sangre else None
+                        frac = sangre.medir(cuadro, rects_sangre)
                         if sangre.actualizar(ahora, frac):
                             activos.add("hemorragia")
                 for clase in activos:
@@ -206,7 +277,8 @@ def main():
                         resaltar(vista_evento, rects_sangre)
                     rotular(vista_evento, detector, sangre, recientes, ahora)
                     cv2.putText(vista_evento, datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
-                                (vista_evento.shape[1] - 200, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+                                (vista_evento.shape[1] - 200, 20),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
                     captura = captura_jpeg(vista_evento)
                     codigo, cuerpo = enviar("evento", {
                         "identificador": str(uuid.uuid4()),
@@ -229,9 +301,19 @@ def main():
                 rotular(vista, detector, sangre, recientes, ahora)
                 publicar(vista)
                 ultima_publicacion = ahora
+
+            if DIAGNOSTICO and ahora - ultimo_diag >= 5.0 and ms_yolo:
+                lapso = ahora - ultimo_diag
+                print(f"[diag] {len(ms_yolo) / lapso:.1f} análisis/s | "
+                      f"YOLO {sum(ms_yolo) / len(ms_yolo):.0f} ms | "
+                      f"edad del cuadro analizado {sum(edades) / len(edades):.0f} ms")
+                ms_yolo, edades = [], []
+                ultimo_diag = ahora
     except KeyboardInterrupt:
         print("Servicio detenido.")
     finally:
+        lector.detener()
+        lector.join(timeout=1.0)
         camara.release()
 
 
