@@ -31,4 +31,4 @@ class SonidoTests(TestCase):
 
     def test_el_dashboard_ofrece_activar_el_sonido(self):
         r = self.client.get(reverse("monitoreo:dashboard"))
-        self.assertContains(r, "Activar sonido")
+        self.assertContains(r, "Sonido activado")
