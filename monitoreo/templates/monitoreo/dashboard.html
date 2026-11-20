@@ -22,10 +22,14 @@
     </select>
   </label>
   <button type="button" id="actualizar">Actualizar ahora</button>
-  <button type="button" id="sonido" class="boton-claro">Activar sonido</button>
+  <button type="button" id="sonido" class="boton-claro">Sonido activado</button>
 </div>
 <p id="aviso" role="alert" hidden>
   El Dashboard dejó de actualizarse. Los datos mostrados pueden estar desactualizados.
+</p>
+<p id="aviso-audio" role="status" hidden
+   style="background:#fff4d6;border:1px solid #e0b84c;padding:.5rem .75rem;border-radius:6px;margin:.5rem 0;">
+  Haga clic en cualquier parte de la página para habilitar el sonido de las alarmas.
 </p>
 
 <section class="ficha camara-panel">
@@ -45,19 +49,55 @@
   var url = "{% url 'monitoreo:dashboard' %}?parcial=1";
   var tablero = document.getElementById("tablero");
   var aviso = document.getElementById("aviso");
+  var avisoAudio = document.getElementById("aviso-audio");
   var buscar = document.getElementById("buscar");
   var fEstado = document.getElementById("f-estado");
   var fSala = document.getElementById("f-sala");
   var botonSonido = document.getElementById("sonido");
   var ultimoExito = Date.now();
   var audio = null;
-  var sonidoActivo = false;
+  var ultimoPito = 0;
+  var INTERVALO_PITO = 2000; // ms entre pitidos mientras haya alarmas pendientes
   var vistas = new Set();
 
+  // El sonido viene activado por defecto; el silencio manual se recuerda.
+  var sonidoActivo = true;
+  try {
+    if (window.localStorage.getItem("hv_sonido") === "0") { sonidoActivo = false; }
+  } catch (e) {}
+
+  function pintarBoton() {
+    botonSonido.textContent = sonidoActivo ? "Sonido activado" : "Sonido silenciado";
+  }
+
+  function audioListo() {
+    return !!audio && audio.state === "running";
+  }
+
+  function prepararAudio() {
+    try {
+      if (!audio) { audio = new (window.AudioContext || window.webkitAudioContext)(); }
+      if (audio.state === "suspended") { audio.resume(); }
+    } catch (e) { audio = null; }
+    mostrarAvisoAudio();
+  }
+
+  function mostrarAvisoAudio() {
+    avisoAudio.hidden = !sonidoActivo || audioListo();
+  }
+
+  function hayCriticas() {
+    return tablero.querySelector("[data-critica]") !== null;
+  }
+
+  // Dos pitidos cortos.
   function pitar() {
-    if (!sonidoActivo || !audio) { return; }
+    if (!sonidoActivo || !audioListo()) { return; }
+    var ahora = Date.now();
+    if (ahora - ultimoPito < INTERVALO_PITO - 500) { return; }
+    ultimoPito = ahora;
     var t = audio.currentTime;
-    [0, 0.35, 0.7].forEach(function (d) {
+    [0, 0.3].forEach(function (d) {
       var o = audio.createOscillator();
       var g = audio.createGain();
       o.type = "square";
@@ -114,19 +154,40 @@
       .catch(function () {});
   }
 
+  // El botón silencia o reactiva el sonido.
   botonSonido.addEventListener("click", function () {
-    if (!audio) { audio = new (window.AudioContext || window.webkitAudioContext)(); }
-    if (audio.state === "suspended") { audio.resume(); }
     sonidoActivo = !sonidoActivo;
-    botonSonido.textContent = sonidoActivo ? "Sonido activado" : "Activar sonido";
-    if (sonidoActivo) { pitar(); }
+    try { window.localStorage.setItem("hv_sonido", sonidoActivo ? "1" : "0"); } catch (e) {}
+    pintarBoton();
+    if (sonidoActivo) { prepararAudio(); pitar(); } else { mostrarAvisoAudio(); }
   });
+
+  // El navegador exige un gesto del usuario: el primer clic o tecla habilita el audio.
+  function primerGesto() {
+    prepararAudio();
+    if (audioListo()) {
+      document.removeEventListener("click", primerGesto);
+      document.removeEventListener("keydown", primerGesto);
+      document.removeEventListener("touchstart", primerGesto);
+    }
+  }
+  document.addEventListener("click", primerGesto);
+  document.addEventListener("keydown", primerGesto);
+  document.addEventListener("touchstart", primerGesto);
 
   [buscar, fEstado, fSala].forEach(function (el) {
     el.addEventListener("input", filtrar);
   });
+
+  pintarBoton();
+  prepararAudio();
   revisarCriticas(true);
   setInterval(actualizar, 3000);
+  // Mientras exista una alarma crítica sin atender, el pitido se repite.
+  setInterval(function () {
+    if (hayCriticas()) { pitar(); }
+    mostrarAvisoAudio();
+  }, INTERVALO_PITO);
   setInterval(function () {
     aviso.hidden = (Date.now() - ultimoExito) <= 10000;
   }, 1000);
