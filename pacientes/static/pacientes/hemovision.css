@@ -210,3 +210,13 @@ textarea { width: 100%; min-height: 80px; }
 .camaras { display: flex; gap: 16px; flex-wrap: wrap; }
 .camaras figure { margin: 0; }
 .camaras figcaption { font-weight: 700; margin-bottom: 4px; }
+
+/* Portada del login: foto de la sala de hemodiálisis con un velo turquesa */
+.login-panel {
+  background:
+    linear-gradient(rgba(0, 70, 80, 0.6), rgba(0, 70, 80, 0.6)),
+    url("img/portada_login.jpg") center / cover no-repeat;
+  background-color: var(--turquesa);
+}
+.login-panel h2,
+.login-panel p { text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4); }
